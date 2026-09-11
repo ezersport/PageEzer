@@ -1,0 +1,381 @@
+import React, { useState, useEffect } from 'react';
+import type { Product, ProductVariant } from '../types';
+import {
+  addToCart,
+  getCurrentRate,
+  formatBs,
+  formatUSD,
+  emitEvent,
+} from '../lib/store';
+import { CartDrawer } from './CartDrawer';
+import { CheckoutModal } from './CheckoutModal';
+import {
+  ArrowLeft,
+  Check,
+  Plus,
+  Minus,
+  ShoppingBag,
+  Clock,
+  Sparkles,
+  Flame,
+  Info,
+  ShieldCheck,
+  Truck,
+} from 'lucide-react';
+
+interface ProductDetailViewProps {
+  product: Product;
+}
+
+export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product }) => {
+  const [currentRate, setCurrentRate] = useState<number>(76.50);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  // Opciones únicas (colores o estampados) de forma segura
+  const safeVariants: ProductVariant[] = Array.isArray(product.variants) && product.variants.length > 0
+    ? product.variants
+    : [{
+        id: `var-std-${product.id}`,
+        size: 'Única',
+        optionName: 'Estándar Taller',
+        colorHex: '#009fe3',
+        stock: 99,
+        imagePreview: (product.images && product.images[0]) || '/images/conjunto-ninos-mickey.webp',
+      }];
+
+  const availableOptions = Array.from(new Set(safeVariants.map((v) => v.optionName || 'Estándar')));
+  const [selectedOption, setSelectedOption] = useState<string>(availableOptions[0] || 'Estándar');
+
+  const matchingVariants = safeVariants.filter((v) => (v.optionName || 'Estándar') === selectedOption);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    matchingVariants[0] || safeVariants[0]
+  );
+
+  const [selectedImage, setSelectedImage] = useState<string>(
+    (product.images && product.images[0]) || '/images/conjunto-ninos-mickey.webp'
+  );
+  const [quantity, setQuantity] = useState<number>(1);
+  const [addedAnimation, setAddedAnimation] = useState(false);
+
+  useEffect(() => {
+    if (product.images && product.images.length > 0) {
+      setSelectedImage(product.images[0]);
+    }
+  }, [product]);
+
+  useEffect(() => {
+    setCurrentRate(getCurrentRate());
+    const handleRateUpdate = (e: any) => {
+      setCurrentRate(e.detail?.currentRate || getCurrentRate());
+    };
+    window.addEventListener('ezer-rate-updated', handleRateUpdate);
+    return () => window.removeEventListener('ezer-rate-updated', handleRateUpdate);
+  }, []);
+
+  useEffect(() => {
+    const newMatches = safeVariants.filter((v) => (v.optionName || 'Estándar') === selectedOption);
+    if (newMatches.length > 0) {
+      setSelectedVariant(newMatches[0]);
+    } else {
+      setSelectedVariant(safeVariants[0]);
+    }
+  }, [selectedOption, product]);
+
+  // Cálculo de precio según cantidad seleccionada
+  let unitPriceUSD = product.basePriceUSD || 0;
+  let activeTier = 'Precio Detal (1 unidad)';
+  if (quantity >= 12 && product.tier12PriceUSD) {
+    unitPriceUSD = product.tier12PriceUSD;
+    activeTier = 'Docena Mayorista (12+)';
+  } else if (quantity >= 6 && product.tier6PriceUSD) {
+    unitPriceUSD = product.tier6PriceUSD;
+    activeTier = 'Mayorista de Fábrica (6+)';
+  } else if (quantity >= 3 && product.tier3PriceUSD) {
+    unitPriceUSD = product.tier3PriceUSD;
+    activeTier = 'Promo x3 piezas';
+  }
+
+  const totalUSD = unitPriceUSD * quantity;
+  const totalBs = totalUSD * (currentRate || 76.50);
+
+  const handleAddToCart = () => {
+    const variantToAdd = selectedVariant || safeVariants[0];
+    if (!variantToAdd) return;
+    addToCart(product, variantToAdd, quantity);
+    setAddedAnimation(true);
+    setTimeout(() => {
+      setAddedAnimation(false);
+    }, 1500);
+  };
+
+  const handleDirectWhatsApp = () => {
+    if (!selectedVariant) return;
+    const msg = `¡Hola Ezer Sport! 👋 Me interesa este producto:
+• *${product.name}*
+• Talla: ${selectedVariant.size}
+• ${product.variantType === 'print' ? 'Estampado' : 'Color'}: ${selectedOption}
+• Cantidad: ${quantity}
+• Total estimado: ${formatBs(totalBs)} (Ref. ${formatUSD(totalUSD)})
+
+¿Tienen disponibilidad para coordinar la entrega? ¡Gracias!`;
+
+    window.open(`https://wa.me/584241282108?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      {/* Back button */}
+      <div className="flex items-center justify-between">
+        <a
+          href="/#catalogo"
+          className="inline-flex items-center gap-2 text-sm sm:text-base font-medium text-slate-600 hover:text-[#009fe3] transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Volver al Catálogo</span>
+        </a>
+
+        <button
+          onClick={() => emitEvent('ezer-open-cart')}
+          className="text-xs sm:text-sm font-semibold text-[#0c3b74] bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 flex items-center gap-2"
+        >
+          <ShoppingBag className="w-4 h-4 text-[#009fe3]" />
+          <span>Ver mi carrito</span>
+        </button>
+      </div>
+
+      {/* Main product presentation */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* Gallery */}
+        <div className="lg:col-span-6 space-y-4">
+          <div className="rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 aspect-square relative shadow-lg">
+            <img
+              src={selectedImage}
+              alt={product.name}
+              className="w-full h-full object-cover object-center"
+            />
+
+            {/* Badges */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
+              {product.badge && (
+                <span className="bg-[#0c3b74] text-white text-xs sm:text-sm font-bold px-3.5 py-1 rounded-full shadow-md">
+                  {product.badge}
+                </span>
+              )}
+
+              {product.availability === 'inmediato' ? (
+                <span className="bg-emerald-600 text-white text-xs sm:text-sm font-semibold px-3 py-1 rounded-full shadow-md">
+                  🟢 Stock en Almacén (24-48h)
+                </span>
+              ) : (
+                <span className="bg-amber-500 text-white text-xs sm:text-sm font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Confección Taller (4-7 días)</span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Purchase form */}
+        <div className="lg:col-span-6 space-y-6">
+          <div className="space-y-2">
+            {product.fabric && (
+              <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#009fe3] block">
+                Tela: {product.fabric}
+              </span>
+            )}
+            <h1 className="font-display font-black text-2xl sm:text-4xl text-slate-900 leading-tight">
+              {product.name}
+            </h1>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed pt-1">
+              {product.description}
+            </p>
+          </div>
+
+          {/* Price Box */}
+          <div className="p-5 rounded-3xl bg-blue-50/70 border border-blue-100 space-y-3">
+            <div className="flex items-baseline justify-between gap-4">
+              <div>
+                <span className="text-xs text-slate-500 block">Total estimado:</span>
+                <span className="font-display font-black text-3xl sm:text-4xl text-[#0c3b74]">
+                  {formatBs(totalBs)}
+                </span>
+                <span className="text-sm sm:text-base text-slate-500 ml-2 font-normal">
+                  (Ref. {formatUSD(totalUSD)})
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-[#0c3b74] bg-white px-3 py-1 rounded-full border border-blue-100">
+                {activeTier}
+              </span>
+            </div>
+          </div>
+
+          {/* Selector 1: Estampado / Color */}
+          <div className="space-y-3">
+            <label className="text-sm sm:text-base font-semibold text-slate-900 flex items-center justify-between">
+              <span>
+                1. Elige el {product.variantType === 'print' ? 'Estampado / Motivo' : 'Color'}:
+              </span>
+              <span className="text-[#009fe3] font-bold">{selectedOption}</span>
+            </label>
+
+            <div className="flex flex-wrap gap-2.5">
+              {availableOptions.map((opt) => {
+                const isSelected = selectedOption === opt;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => setSelectedOption(opt)}
+                    className={`px-4 py-2.5 rounded-2xl text-sm font-medium transition-all flex items-center gap-2 border ${
+                      isSelected
+                        ? 'bg-[#009fe3] text-white border-[#009fe3] shadow-md shadow-cyan-500/20'
+                        : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-4 h-4" />}
+                    <span>{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Selector 2: Talla */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm sm:text-base font-semibold text-slate-900">
+                2. Selecciona la Talla:
+              </label>
+              <button
+                type="button"
+                onClick={() => emitEvent('ezer-open-size-guide')}
+                className="text-xs sm:text-sm text-[#009fe3] hover:underline font-semibold flex items-center gap-1"
+              >
+                <span>Ver tabla de medidas en cm</span>
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
+              {matchingVariants.map((v) => {
+                const isSelected = selectedVariant?.id === v.id;
+                const hasStock = v.stock > 0;
+                return (
+                  <button
+                    key={v.id}
+                    disabled={!hasStock}
+                    onClick={() => setSelectedVariant(v)}
+                    className={`min-w-[56px] py-3 px-4 rounded-2xl text-sm sm:text-base font-medium transition-all border ${
+                      isSelected
+                        ? 'bg-[#0c3b74] text-white border-[#0c3b74] shadow-md font-semibold'
+                        : hasStock
+                        ? 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                        : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed line-through'
+                    }`}
+                  >
+                    {v.size}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Wholesale Pricing Table */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-900">
+              <Flame className="w-4 h-4 text-amber-500" />
+              <span>Escala de Precios al Mayor para este modelo:</span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="block text-slate-400 text-xs">1 Unidad</span>
+                <span className="font-bold text-slate-900 block mt-0.5">{formatUSD(product.basePriceUSD)}</span>
+                <span className="text-[11px] text-slate-500">Detal</span>
+              </div>
+
+              {product.tier3PriceUSD && (
+                <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100">
+                  <span className="block text-[#009fe3] font-semibold text-xs">x3 piezas</span>
+                  <span className="font-bold text-[#0c3b74] block mt-0.5">{formatUSD(product.tier3PriceUSD)}</span>
+                  <span className="text-[11px] text-[#009fe3]">Ahorras 15%</span>
+                </div>
+              )}
+
+              {product.tier6PriceUSD && (
+                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                  <span className="block text-amber-700 font-bold text-xs">1/2 Doc (6)</span>
+                  <span className="font-bold text-amber-800 block mt-0.5">{formatUSD(product.tier6PriceUSD)}</span>
+                  <span className="text-[11px] text-amber-600 font-medium">Mayor</span>
+                </div>
+              )}
+
+              {product.tier12PriceUSD && (
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span className="block text-slate-600 font-semibold text-xs">Docena</span>
+                  <span className="font-bold text-slate-900 block mt-0.5">{formatUSD(product.tier12PriceUSD)}</span>
+                  <span className="text-[11px] text-emerald-700 font-medium">Super Mayor</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quantity Controls & Action Buttons */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center bg-slate-100 rounded-2xl border border-slate-200 p-1">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors"
+                  aria-label="Restar cantidad"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <span className="font-display font-bold text-lg text-slate-900 px-5">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors"
+                  aria-label="Sumar cantidad"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Add to cart */}
+              <button
+                onClick={handleAddToCart}
+                disabled={!selectedVariant || selectedVariant.stock === 0}
+                className={`flex-1 py-4 px-6 rounded-2xl font-display font-semibold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 active:scale-95 shadow-md ${
+                  addedAnimation
+                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                    : 'bg-[#009fe3] hover:bg-[#0087c2] text-white shadow-cyan-500/20'
+                }`}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                <span>
+                  {addedAnimation
+                    ? '¡Agregado al Carrito!'
+                    : `Agregar ${quantity} al Carrito`}
+                </span>
+              </button>
+            </div>
+
+            {/* Direct WhatsApp button option */}
+            <button
+              onClick={handleDirectWhatsApp}
+              disabled={!selectedVariant || selectedVariant.stock === 0}
+              className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 font-display font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-colors shadow-sm"
+            >
+              <span>Consultar o pedir directamente por WhatsApp</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Global Modals for Checkout and Cart Drawer */}
+      <CartDrawer onOpenCheckout={() => setCheckoutOpen(true)} />
+      <CheckoutModal isOpen={checkoutOpen} onClose={() => setCheckoutOpen(false)} />
+    </div>
+  );
+};

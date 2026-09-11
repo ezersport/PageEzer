@@ -1,0 +1,43 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Header } from '../components/Header';
+import { FullWidthHero } from '../components/FullWidthHero';
+import { PromoBanners } from '../components/PromoBanners';
+import { BigCategoryBanners } from '../components/BigCategoryBanners';
+import { CatalogSection } from '../components/CatalogSection';
+import { CustomOrderSection } from '../components/CustomOrderSection';
+import { AboutWorkshopSection } from '../components/AboutWorkshopSection';
+import { DeliveryInfoSection } from '../components/DeliveryInfoSection';
+import { FAQSection } from '../components/FAQSection';
+import { SizeGuideSection } from '../components/SizeGuideSection';
+import { Footer } from '../components/Footer';
+import { FloatingWhatsApp } from '../components/FloatingWhatsApp';
+import { SizeGuideModal } from '../components/SizeGuideModal';
+---
+
+<Layout
+  title="Ezer Sport | Pijamas para Niños, Uniformes, Ropa Deportiva, Suéteres y Monos al Mayor"
+  description="Taller de confección textil venezolano en Los Teques. Pijamas térmicas para niños, uniformes escolares y deportivos, suéteres hoodies afelpados, monos joggers y franelas al detal y mayorista. Entregas en Caracas (Plaza Venezuela) y envíos nacionales."
+>
+  <Header client:load />
+  <main class="flex-1">
+    <!-- Interactive & Animated Hero -->
+    <FullWidthHero client:load />
+    <PromoBanners />
+    <BigCategoryBanners client:visible />
+
+    <!-- Interactive Island: Catalog with live filters, variants and cart -->
+    <CatalogSection client:load />
+
+    <!-- Interactive Informational, Delivery & FAQ Islands -->
+    <CustomOrderSection client:visible />
+    <AboutWorkshopSection />
+    <DeliveryInfoSection client:visible />
+    <FAQSection client:visible />
+    <SizeGuideSection />
+  </main>
+
+  <Footer />
+  <FloatingWhatsApp />
+  <SizeGuideModal client:idle />
+</Layout>

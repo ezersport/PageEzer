@@ -1,0 +1,69 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { Header } from '../../components/Header';
+import { ProductDetailView } from '../../components/ProductDetailView';
+import { Footer } from '../../components/Footer';
+import { FloatingWhatsApp } from '../../components/FloatingWhatsApp';
+import { SizeGuideModal } from '../../components/SizeGuideModal';
+import { INITIAL_PRODUCTS } from '../../data/mockData';
+
+export function getStaticPaths() {
+  return INITIAL_PRODUCTS.map((product) => ({
+    params: { slug: product.slug },
+    props: { product },
+  }));
+}
+
+const { product } = Astro.props;
+
+const productSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  image: product.images.map((img: string) => `https://ezersport.com${img}`),
+  description: product.description,
+  sku: product.id,
+  brand: {
+    '@type': 'Brand',
+    name: 'Ezer Sport',
+  },
+  offers: {
+    '@type': 'Offer',
+    url: `https://ezersport.com/producto/${product.slug}`,
+    priceCurrency: 'USD',
+    price: product.basePriceUSD,
+    availability: 'https://schema.org/InStock',
+    seller: {
+      '@type': 'Organization',
+      name: 'Ezer Sport Confección Textil',
+    },
+  },
+};
+---
+
+<Layout
+  title={`${product.name} | Ezer Sport`}
+  description={product.description}
+  image={product.images[0]}
+  keywords={`${product.name}, confeccion venezuela, ropa infantil, uniformes, sueteres, pijamas niños, ezer sport`}
+  productSchema={productSchema}
+>
+  <Header client:load />
+  <main class="flex-1 bg-[#f8fafc]">
+    <!-- Breadcrumb for SEO -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <nav class="flex text-xs sm:text-sm text-slate-500 gap-2 items-center">
+        <a href="/" class="hover:text-[#009fe3] transition-colors">Inicio</a>
+        <span>/</span>
+        <a href="/#catalogo" class="hover:text-[#009fe3] transition-colors">Catálogo</a>
+        <span>/</span>
+        <span class="text-slate-800 font-medium truncate">{product.name}</span>
+      </nav>
+    </div>
+
+    <ProductDetailView client:load product={product} />
+  </main>
+  <Footer />
+  <FloatingWhatsApp />
+  <SizeGuideModal client:idle />
+</Layout>

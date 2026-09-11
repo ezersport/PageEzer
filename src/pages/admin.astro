@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { AdminPanel } from '../components/AdminPanel';
+---
+
+<Layout
+  title="Panel de Administración | Ezer Sport"
+  description="Gestión interna de tasas de cambio oficiales, zonas de entrega en Los Teques y Caracas, catálogo mayorista y pedidos."
+>
+  <AdminPanel client:load />
+</Layout>

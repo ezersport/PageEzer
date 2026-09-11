@@ -1,0 +1,173 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  keywords?: string;
+  schemaType?: string;
+  productSchema?: any;
+}
+
+const {
+  title = 'Ezer Sport | Pijamas para Niños, Uniformes, Ropa Deportiva, Suéteres y Monos al Mayor',
+  description = 'Taller de confección textil venezolano en Los Teques. Pijamas térmicas para niños, uniformes escolares y deportivos, suéteres hoodies con capucha, monos joggers afelpados y franelas al detal y precios de fábrica al mayor. Entregas en Caracas (Plaza Venezuela) y envíos a toda Venezuela.',
+  image = '/images/hero-full-banner.webp',
+  keywords = 'pijamas para niños, uniformes escolares, uniformes deportivos, ropa deportiva venezuela, sueteres con capucha, monos joggers niños, camisas al mayor, franelas algodon, confeccion textil los teques, fabrica de ropa caracas, ropa infantil mayorista, hoodies afelpados',
+  productSchema,
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://ezersport.com');
+
+// Schema.org LocalBusiness & ClothingStore
+const storeSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ClothingStore',
+  name: 'Ezer Sport | Taller de Confección Textil',
+  alternateName: 'Ezer Confecciones',
+  description: description,
+  url: 'https://ezersport.com',
+  logo: 'https://ezersport.com/images/ezer-logo.webp',
+  image: 'https://ezersport.com/images/hero-full-banner.webp',
+  telephone: '+584241282108',
+  priceRange: '$ - $$',
+  currenciesAccepted: 'USD, VES',
+  paymentAccepted: 'Efectivo, Pago Móvil, Binance, Transferencia Bancaria',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Taller Central Los Teques',
+    addressLocality: 'Los Teques',
+    addressRegion: 'Miranda',
+    addressCountry: 'VE',
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 10.3444,
+    longitude: -67.0433,
+  },
+  openingHoursSpecification: [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      opens: '08:00',
+      closes: '18:00',
+    },
+  ],
+  areaServed: [
+    { '@type': 'City', name: 'Los Teques' },
+    { '@type': 'City', name: 'Caracas' },
+    { '@type': 'City', name: 'San Antonio de los Altos' },
+    { '@type': 'Country', name: 'Venezuela' },
+  ],
+};
+
+// Schema.org FAQ
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: '¿Hacen ventas al mayor de pijamas para niños, uniformes y ropa deportiva?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Sí, somos fabricantes directos. Ofrecemos escalas de precio al mayor a partir de 6 piezas surtidas en tallas y colores para tiendas, revendedores y colegios.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Dónde realizan entregas en Caracas y Miranda?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'En Caracas realizamos entregas presenciales los sábados en Plaza Venezuela frente a la Torre La Previsora (gratis en compras superiores a 30$). En Los Teques entregamos gratis en las estaciones de Metro Independencia y Alí Primera de lunes a sábado.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Qué tipo de telas usan para pijamas infantiles y suéteres afelpados?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Utilizamos algodón afelpado perchado antialérgico nacional de alta durabilidad, algodón peinado 24/1 y taslan impermeable con forro transpirable.',
+      },
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/ezer-icon-192.png" />
+    <link rel="canonical" href={canonicalURL} />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- SEO Meta Tags -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="Ezer Sport Confección Textil" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <!-- OpenGraph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_VE" />
+    <meta property="og:site_name" content="Ezer Sport" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Performance: Preload Critical Hero LCP Image -->
+    <link
+      rel="preload"
+      as="image"
+      href="/images/hero-familia-taller.webp"
+      type="image/webp"
+      fetchpriority="high"
+    />
+
+    <!-- Google Fonts: Poppins with display=swap (Non-render-blocking) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Structured Data JSON-LD (Rich Snippets for Google) -->
+    <script type="application/ld+json" set:html={JSON.stringify(storeSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+    {productSchema && (
+      <script type="application/ld+json" set:html={JSON.stringify(productSchema)} />
+    )}
+
+    <ClientRouter />
+  </head>
+  <body class="bg-[#f8fafc] text-slate-800 min-h-screen flex flex-col selection:bg-[#009fe3] selection:text-white antialiased">
+    <slot />
+  </body>
+</html>
