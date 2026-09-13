@@ -112,7 +112,7 @@ export const Footer: React.FC = () => {
               <li className="flex items-start gap-2">
                 <Truck className="w-4 h-4 text-[#009fe3] shrink-0 mt-0.5" />
                 <span>
-                  Sábados en Plaza Venezuela (Torre La Previsora) • Gratis en Los Teques • San Antonio desde $1.5
+                  Sábados en Plaza Venezuela (Torre La Previsora) • Gratis en Los Teques • San Antonio (Altos Mirandinos)
                 </span>
               </li>
               <li className="pt-1">
