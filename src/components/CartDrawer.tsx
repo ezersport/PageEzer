@@ -8,7 +8,6 @@ import {
   removeFromCart,
   clearCart,
   formatBs,
-  formatUSD,
 } from '../lib/store';
 import {
   X,
@@ -97,7 +96,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
               <div className="flex items-center gap-2 text-xs sm:text-sm text-emerald-800 font-semibold">
                 <Sparkles className="w-4 h-4 shrink-0 text-emerald-600" />
                 <span>
-                  ¡Ahorras {formatBs(summary.savingsBs)} ({formatUSD(summary.savingsUSD)}) con la escala por volumen!
+                  ¡Ahorras {formatBs(summary.savingsBs)} con la escala por volumen!
                 </span>
               </div>
             )}
@@ -178,7 +177,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
                       {formatBs(item.appliedUnitPriceUSD * item.quantity * currentRate)}
                     </span>
                     <span className="text-xs text-slate-500">
-                      ({formatUSD(item.appliedUnitPriceUSD)} c/u)
+                      ({formatBs(item.appliedUnitPriceUSD * currentRate)} c/u)
                     </span>
                   </div>
                 </div>
@@ -221,12 +220,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
           <div className="p-5 sm:p-6 border-t border-slate-200 bg-slate-50 space-y-4">
             <div className="space-y-1.5">
               <div className="flex justify-between items-baseline text-xs sm:text-sm text-slate-600">
-                <span>Subtotal ({totalPieces} piezas):</span>
-                <span>Ref. {formatUSD(summary.subtotalUSD)}</span>
+                <span>Total prendas ({totalPieces} piezas):</span>
+                <span className="font-semibold text-slate-800">{formatBs(summary.subtotalBs)}</span>
               </div>
               <div className="flex justify-between items-baseline">
                 <span className="font-display font-medium text-base text-slate-900">
-                  Total en Bolívares:
+                  Total a Pagar:
                 </span>
                 <span className="font-display font-bold text-2xl text-[#0c3b74]">
                   {formatBs(summary.subtotalBs)}

@@ -67,12 +67,12 @@ export const DeliveryInfoSection: React.FC = () => {
                   <span>¡ENTREGA GRATIS!</span>
                 </div>
                 <p className="text-base text-emerald-900 font-semibold leading-snug">
-                  A partir de compras superiores a 30$
+                  Para pedidos y compras al mayor
                 </p>
               </div>
 
               <p className="text-base text-slate-700 leading-relaxed">
-                Compras menores a 30$: Costo de entrega acordada Ref. 2$.
+                Entregas en punto acordado coordinadas directamente con el taller.
               </p>
             </div>
           </div>
@@ -138,7 +138,7 @@ export const DeliveryInfoSection: React.FC = () => {
               {/* Price badge */}
               <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 space-y-1">
                 <span className="font-display font-black text-base text-amber-800 block">
-                  🛵 Delivery desde 1,5 $
+                  🛵 Delivery Directo Express
                 </span>
                 <p className="text-base text-amber-900 font-medium">
                   Directo y express en Altos Mirandinos

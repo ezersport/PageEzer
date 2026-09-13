@@ -4,7 +4,6 @@ import {
   addToCart,
   getCurrentRate,
   formatBs,
-  formatUSD,
   emitEvent,
 } from '../lib/store';
 import { CartDrawer } from './CartDrawer';
@@ -110,14 +109,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
 
   const handleDirectWhatsApp = () => {
     if (!selectedVariant) return;
-    const msg = `¡Hola Ezer Sport! 👋 Me interesa este producto:
-• *${product.name}*
-• Talla: ${selectedVariant.size}
-• ${product.variantType === 'print' ? 'Estampado' : 'Color'}: ${selectedOption}
-• Cantidad: ${quantity}
-• Total estimado: ${formatBs(totalBs)} (Ref. ${formatUSD(totalUSD)})
+    const msg = `¡Hola Ezer Sport! Me interesa consultar la siguiente prenda:
+- Modelo: ${product.name}
+- Talla: ${selectedVariant.size}
+- ${product.variantType === 'print' ? 'Estampado' : 'Color'}: ${selectedOption}
+- Cantidad: ${quantity}
+- Total estimado: ${formatBs(totalBs)}
 
-¿Tienen disponibilidad para coordinar la entrega? ¡Gracias!`;
+¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
 
     window.open(`https://wa.me/584241282108?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -199,9 +198,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                 <span className="text-xs text-slate-500 block">Total estimado:</span>
                 <span className="font-display font-black text-3xl sm:text-4xl text-[#0c3b74]">
                   {formatBs(totalBs)}
-                </span>
-                <span className="text-sm sm:text-base text-slate-500 ml-2 font-normal">
-                  (Ref. {formatUSD(totalUSD)})
                 </span>
               </div>
               <span className="text-xs sm:text-sm font-bold text-[#0c3b74] bg-white px-3 py-1 rounded-full border border-blue-100">
@@ -289,14 +285,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm">
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="block text-slate-400 text-xs">1 Unidad</span>
-                <span className="font-bold text-slate-900 block mt-0.5">{formatUSD(product.basePriceUSD)}</span>
+                <span className="font-bold text-slate-900 block mt-0.5">{formatBs((product.basePriceUSD || 0) * currentRate)}</span>
                 <span className="text-[11px] text-slate-500">Detal</span>
               </div>
 
               {product.tier3PriceUSD && (
                 <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100">
                   <span className="block text-[#009fe3] font-semibold text-xs">x3 piezas</span>
-                  <span className="font-bold text-[#0c3b74] block mt-0.5">{formatUSD(product.tier3PriceUSD)}</span>
+                  <span className="font-bold text-[#0c3b74] block mt-0.5">{formatBs(product.tier3PriceUSD * currentRate)}</span>
                   <span className="text-[11px] text-[#009fe3]">Ahorras 15%</span>
                 </div>
               )}
@@ -304,7 +300,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               {product.tier6PriceUSD && (
                 <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
                   <span className="block text-amber-700 font-bold text-xs">1/2 Doc (6)</span>
-                  <span className="font-bold text-amber-800 block mt-0.5">{formatUSD(product.tier6PriceUSD)}</span>
+                  <span className="font-bold text-amber-800 block mt-0.5">{formatBs(product.tier6PriceUSD * currentRate)}</span>
                   <span className="text-[11px] text-amber-600 font-medium">Mayor</span>
                 </div>
               )}
@@ -312,7 +308,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               {product.tier12PriceUSD && (
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="block text-slate-600 font-semibold text-xs">Docena</span>
-                  <span className="font-bold text-slate-900 block mt-0.5">{formatUSD(product.tier12PriceUSD)}</span>
+                  <span className="font-bold text-slate-900 block mt-0.5">{formatBs(product.tier12PriceUSD * currentRate)}</span>
                   <span className="text-[11px] text-emerald-700 font-medium">Super Mayor</span>
                 </div>
               )}

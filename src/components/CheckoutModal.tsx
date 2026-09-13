@@ -10,7 +10,6 @@ import {
   createOrderInSupabase,
   clearCart,
   formatBs,
-  formatUSD,
 } from '../lib/store';
 import {
   X,
@@ -167,51 +166,48 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       });
     } catch (err) {}
 
-    // Formatear mensaje oficial para WhatsApp Ezer Sport
+    // Formatear mensaje oficial para WhatsApp Ezer Sport (Limpio, conciso, seguro y solo en Bs)
     const itemsListText = cartItems
       .map(
         (item) =>
-          `• ${item.quantity}x ${item.productName} (${item.optionName} - Talla ${item.size}) [${item.availability === 'inmediato' ? 'Stock' : 'Bajo Pedido'}] = ${formatBs(
+          `* ${item.quantity}x ${item.productName} (${item.optionName} / Talla ${item.size}) - ${formatBs(
             item.appliedUnitPriceUSD * item.quantity * currentRate
-          )} (Ref. ${formatUSD(item.appliedUnitPriceUSD * item.quantity)})`
+          )}`
       )
       .join('\n');
 
     const paymentLabel =
       paymentMethod === 'pago_movil'
-        ? 'Pago Móvil / Transferencia (Mercantil / BDV)'
-        : paymentMethod === 'efectivo'
-        ? 'Efectivo en Dólares ($)'
-        : paymentMethod === 'zinli'
-        ? 'Zinli USD'
-        : 'Binance Pay (USDT)';
+        ? 'Pago Movil / BDV / Mercantil'
+        : paymentMethod === 'transferencia'
+        ? 'Transferencia Bancaria'
+        : 'Efectivo en Entrega';
 
     const deliveryCostText = summary.deliveryIsFree
-      ? '¡GRATIS! 🎉 (Monto superado)'
-      : `${formatBs(summary.deliveryCostBs)} (Ref. ${formatUSD(summary.deliveryCostUSD)})`;
+      ? 'GRATIS'
+      : formatBs(summary.deliveryCostBs);
 
-    const madeToOrderNotice = summary.hasMadeToOrderItems
-      ? '\n⚠️ *Nota:* Incluye prendas bajo pedido (confección en taller: 4-7 días hábiles).\n'
-      : '\n📦 *Nota:* Prendas en stock (despacho en 24 a 48 horas hábiles).\n';
+    const cleanZoneName = selectedZone.name
+      .replace(/\s*\(desde\s*[^\)]+\)/gi, '')
+      .replace(/\s*\([^)]*\$[^)]*\)/gi, '')
+      .trim();
 
-    const whatsappMessage = `¡Hola Ezer Sport! 👋 Quiero formalizar el siguiente pedido desde la web:
+    const whatsappMessage = `¡Hola Ezer Sport! Deseo formalizar el siguiente pedido:
 
-🛍️ *Pedido ${orderNumber}*
+*Pedido ${orderNumber}*
 --------------------------------
 ${itemsListText}
-${madeToOrderNotice}
-💰 *Subtotal Prendas:* ${formatBs(summary.subtotalBs)} (Ref. ${formatUSD(summary.subtotalUSD)})
-📍 *Punto / Zona:* ${selectedZone.name}
-📅 *Horario de Entrega:* ${selectedZone.scheduleDetails}
-🛵 *Costo Delivery:* ${deliveryCostText}
-${!isPickupPoint ? `📌 *Dirección/Agencia:* ${deliveryAddressDetail}\n` : ''}
-⭐ *TOTAL A PAGAR:* ${formatBs(summary.totalBs)} (Ref. ${formatUSD(summary.totalUSD)})
+${summary.hasMadeToOrderItems ? '\nNota: Incluye prendas bajo confeccion (4 a 7 dias habiles).\n' : ''}
+- Subtotal: ${formatBs(summary.subtotalBs)}
+- Entrega: ${cleanZoneName}
+- Costo Envio: ${deliveryCostText}
+*TOTAL A PAGAR: ${formatBs(summary.totalBs)}*
 
-👤 *Cliente:* ${customerName}
-📱 *Teléfono:* ${customerPhone}
-💳 *Método de Pago:* ${paymentLabel}
-
-¿Me confirman los datos bancarios / cuenta para registrar el pago? ¡Muchas gracias!`;
+- Cliente: ${customerName}
+- Telefono: ${customerPhone}
+- Metodo de Pago: ${paymentLabel}
+${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetail}\n` : ''}
+¿Me confirman los datos bancarios para realizar el pago? ¡Muchas gracias!`;
 
     setTimeout(() => {
       clearCart();
@@ -344,10 +340,7 @@ ${!isPickupPoint ? `📌 *Dirección/Agencia:* ${deliveryAddressDetail}\n` : ''}
                       </span>
                     ) : (
                       <span className="text-slate-900 font-bold">
-                        {formatBs(summary.deliveryCostBs)}{' '}
-                        <span className="text-xs text-slate-500 font-normal">
-                          (Ref. {formatUSD(summary.deliveryCostUSD)})
-                        </span>
+                        {formatBs(summary.deliveryCostBs)}
                       </span>
                     )}
                   </div>
@@ -394,19 +387,17 @@ ${!isPickupPoint ? `📌 *Dirección/Agencia:* ${deliveryAddressDetail}\n` : ''}
             )}
           </div>
 
-          {/* Section 3: Payment Method (Without Zelle) */}
+          {/* Section 3: Payment Method */}
           <div className="space-y-3 pt-3 border-t border-slate-100">
             <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#009fe3] flex items-center gap-1.5">
               <CreditCard className="w-4 h-4" />
               <span>3. Método de Pago</span>
             </h3>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               {[
                 { id: 'pago_movil', label: 'Pago Móvil / BDV / Mercantil' },
-                { id: 'efectivo', label: 'Efectivo Divisas ($)' },
-                { id: 'zinli', label: 'Zinli (USD)' },
-                { id: 'binance', label: 'Binance USDT' },
+                { id: 'transferencia', label: 'Transferencia Bancaria' },
               ].map((m) => (
                 <button
                   type="button"
@@ -425,30 +416,10 @@ ${!isPickupPoint ? `📌 *Dirección/Agencia:* ${deliveryAddressDetail}\n` : ''}
 
             {/* Payment brief note */}
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-600">
-              {paymentMethod === 'pago_movil' && (
-                <p>
-                  💳 <strong>Pago Móvil / Bancario:</strong> Mercantil y Banco de Venezuela (BDV). Total:{' '}
-                  <strong className="text-slate-900">{formatBs(summary.totalBs)}</strong> liquidado a la tasa oficial BCV ({currentRate.toFixed(2)} Bs/$).
-                </p>
-              )}
-              {paymentMethod === 'efectivo' && (
-                <p>
-                  💵 <strong>Efectivo en Dólares:</strong> Cancelas el total de{' '}
-                  <strong className="text-slate-900">{formatUSD(summary.totalUSD)}</strong> al momento de la entrega en el punto acordado o en Los Teques.
-                </p>
-              )}
-              {paymentMethod === 'zinli' && (
-                <p>
-                  🟣 <strong>Zinli:</strong> Envío directo en USD sin comisiones de billetera a billetera por{' '}
-                  <strong className="text-slate-900">{formatUSD(summary.totalUSD)}</strong>.
-                </p>
-              )}
-              {paymentMethod === 'binance' && (
-                <p>
-                  🟡 <strong>Binance Pay:</strong> Pagos instantáneos en USDT escaneando código QR o mediante Binance ID por{' '}
-                  <strong className="text-slate-900">{formatUSD(summary.totalUSD)} USDT</strong>.
-                </p>
-              )}
+              <p>
+                💳 <strong>Pago en Bolívares:</strong> Pagos mediante Pago Móvil o transferencia bancaria (Mercantil y Banco de Venezuela). Total:{' '}
+                <strong className="text-slate-900">{formatBs(summary.totalBs)}</strong>.
+              </p>
             </div>
           </div>
 
@@ -456,7 +427,7 @@ ${!isPickupPoint ? `📌 *Dirección/Agencia:* ${deliveryAddressDetail}\n` : ''}
           <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs sm:text-sm">
             <div className="flex justify-between text-slate-600">
               <span>Subtotal Prendas:</span>
-              <span>{formatBs(summary.subtotalBs)} ({formatUSD(summary.subtotalUSD)})</span>
+              <span className="font-semibold text-slate-800">{formatBs(summary.subtotalBs)}</span>
             </div>
             <div className="flex justify-between text-slate-600">
               <span>Entrega / Delivery:</span>
@@ -464,7 +435,7 @@ ${!isPickupPoint ? `📌 *Dirección/Agencia:* ${deliveryAddressDetail}\n` : ''}
                 {summary.deliveryIsFree ? (
                   <strong className="text-emerald-700">¡GRATIS!</strong>
                 ) : (
-                  `${formatBs(summary.deliveryCostBs)} (${formatUSD(summary.deliveryCostUSD)})`
+                  <strong className="text-slate-800">{formatBs(summary.deliveryCostBs)}</strong>
                 )}
               </span>
             </div>
@@ -478,10 +449,7 @@ ${!isPickupPoint ? `📌 *Dirección/Agencia:* ${deliveryAddressDetail}\n` : ''}
             <div className="pt-3 border-t border-slate-200 flex justify-between items-baseline">
               <div>
                 <span className="font-display font-semibold text-base text-slate-900">
-                  Total a Pagar en Bolívares:
-                </span>
-                <span className="block text-xs text-slate-500 font-normal">
-                  Ref. {formatUSD(summary.totalUSD)}
+                  Total a Pagar:
                 </span>
               </div>
               <span className="font-display font-bold text-2xl sm:text-3xl text-[#0c3b74]">

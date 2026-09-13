@@ -40,7 +40,7 @@ export const SizeGuideSection: React.FC = () => {
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5">
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100">
               <img
-                src="/images/conjunto-ninos-mickey.webp"
+                src="/images/conjunto-infantil-podcast.webp"
                 alt="Medidas de Suéter y Mono Infantil Ezer Sport"
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -116,8 +116,8 @@ export const SizeGuideSection: React.FC = () => {
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5">
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100">
               <img
-                src="/images/pijamas-familiares.webp"
-                alt="Medidas de Pijamas Familiares Ezer Sport"
+                src="/images/pijama-ninos-mickey.webp"
+                alt="Medidas de Pijamas Infantiles Ezer Sport"
                 className="w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
@@ -125,7 +125,7 @@ export const SizeGuideSection: React.FC = () => {
                 height="300"
               />
               <span className="absolute bottom-3 left-3 bg-emerald-700/95 backdrop-blur-sm text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow">
-                🌙 Pijamas Familiares
+                🌙 Pijamas Infantiles
               </span>
             </div>
 

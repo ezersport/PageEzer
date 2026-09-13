@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Product, ProductVariant } from '../types';
-import { addToCart, formatBs, formatUSD, emitEvent } from '../lib/store';
+import { addToCart, formatBs, emitEvent } from '../lib/store';
 import { X, Plus, Minus, Check, ShoppingBag, Flame, Sparkles, Clock, Info, Ruler } from 'lucide-react';
 
 interface ProductModalProps {
@@ -148,9 +148,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
                   <span className="font-display font-bold text-2xl text-[#0c3b74]">
                     {formatBs(unitPriceUSD * currentRate)}
                   </span>
-                  <span className="text-xs text-slate-500 ml-2 font-normal">
-                    (Ref. {formatUSD(unitPriceUSD)} c/u)
-                  </span>
                 </div>
                 <span className="text-xs font-medium text-[#009fe3] bg-white px-2.5 py-1 rounded-lg border border-blue-100">
                   {activeTier}
@@ -269,9 +266,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
               <div className="text-right">
                 <span className="block text-sm font-bold leading-none">
                   {formatBs(totalBs)}
-                </span>
-                <span className="text-xs opacity-90 leading-none">
-                  (Ref. {formatUSD(totalUSD)})
                 </span>
               </div>
             </button>

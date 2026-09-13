@@ -1,14 +1,15 @@
 import React from 'react';
 import type { Product } from '../types';
-import { formatBs, formatUSD } from '../lib/store';
+import { formatBs } from '../lib/store';
 import { ArrowRight, Clock } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
   currentRate: number;
+  onSelectProduct?: (product: Product) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, currentRate }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, currentRate, onSelectProduct }) => {
   const priceBs = (product.basePriceUSD || 0) * (currentRate || 76.50);
   const productUrl = `/producto/${product.slug}`;
 
@@ -24,12 +25,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, currentRate }
     (Array.isArray(product.images) && product.images.length > 0 && product.images[0]) ||
     '/images/conjunto-ninos-mickey.webp';
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (onSelectProduct) {
+      e.preventDefault();
+      onSelectProduct(product);
+    }
+  };
+
   return (
     <div className="group bg-white rounded-3xl border border-slate-200 hover:border-[#009fe3] transition-all duration-300 flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1">
-      {/* Product Image Link - Direct navigation to product page */}
+      {/* Product Image Link - Direct navigation or modal */}
       <a
         href={productUrl}
-        className="relative aspect-square w-full overflow-hidden bg-slate-50 block text-left"
+        onClick={handleClick}
+        className="relative aspect-square w-full overflow-hidden bg-slate-50 block text-left cursor-pointer"
       >
         <img
           src={mainImage}
@@ -76,7 +85,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, currentRate }
           <h3 className="font-display font-semibold text-lg sm:text-xl text-slate-900 leading-snug group-hover:text-[#009fe3] transition-colors">
             <a
               href={productUrl}
-              className="text-left font-semibold hover:text-[#009fe3] transition-colors block"
+              onClick={handleClick}
+              className="text-left font-semibold hover:text-[#009fe3] transition-colors block cursor-pointer"
             >
               {product.name || 'Prenda de Confección'}
             </a>
@@ -118,13 +128,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, currentRate }
               {formatBs(priceBs)}
             </span>
             <span className="text-xs text-slate-500 font-normal">
-              Ref. {formatUSD(product.basePriceUSD || 0)} • Fábrica desde 6 pzs
+              Precios al mayor desde 6 piezas
             </span>
           </div>
 
           <a
             href={productUrl}
-            className="px-4 py-2.5 rounded-2xl bg-slate-100 group-hover:bg-[#009fe3] text-slate-700 group-hover:text-white flex items-center gap-1.5 shrink-0 transition-all shadow-sm text-xs font-bold"
+            onClick={handleClick}
+            className="px-4 py-2.5 rounded-2xl bg-slate-100 group-hover:bg-[#009fe3] text-slate-700 group-hover:text-white flex items-center gap-1.5 shrink-0 transition-all shadow-sm text-xs font-bold cursor-pointer"
             aria-label={`Ver detalles de ${product.name}`}
           >
             <span>Ver Detalles</span>
@@ -135,3 +146,4 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, currentRate }
     </div>
   );
 };
+

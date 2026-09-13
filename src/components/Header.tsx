@@ -62,7 +62,7 @@ export const Header: React.FC = () => {
             <span className="font-medium text-[#d0d709]">¡Entregas los Sábados!</span>
             <span className="text-blue-200 hidden sm:inline">•</span>
             <span className="text-blue-100">
-              Caracas: <strong className="text-white">Plaza Venezuela (Gratis &gt; 30$)</strong> | Gratis en <strong className="text-white">Los Teques (Metro)</strong> | San Antonio desde <strong className="text-white">1,5$</strong>
+              Caracas: <strong className="text-white">Plaza Venezuela (Punto de Encuentro)</strong> | Gratis en <strong className="text-white">Los Teques (Metro)</strong> | San Antonio <strong className="text-white">(Altos Mirandinos)</strong>
             </span>
           </div>
 

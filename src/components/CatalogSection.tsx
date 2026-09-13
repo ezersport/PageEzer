@@ -9,6 +9,7 @@ import {
   emitEvent,
 } from '../lib/store';
 import { ProductCard } from './ProductCard';
+import { ProductModal } from './ProductModal';
 import { CartDrawer } from './CartDrawer';
 import { CheckoutModal } from './CheckoutModal';
 import { Search, Scissors } from 'lucide-react';
@@ -20,6 +21,7 @@ export const CatalogSection: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | 'todos'>('todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
   useEffect(() => {
     // 1. Carga inicial síncrona desde caché
@@ -200,10 +202,18 @@ export const CatalogSection: React.FC = () => {
               key={product.id}
               product={product}
               currentRate={currentRate}
+              onSelectProduct={(p) => setSelectedProductModal(p)}
             />
           ))}
         </div>
       )}
+
+      {/* Product Detail Modal */}
+      <ProductModal
+        product={selectedProductModal}
+        currentRate={currentRate}
+        onClose={() => setSelectedProductModal(null)}
+      />
 
       {/* Drawers & Modals */}
       <CartDrawer onOpenCheckout={() => setCheckoutOpen(true)} />

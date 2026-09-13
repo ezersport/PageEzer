@@ -1,4 +1,6 @@
 ---
+export const prerender = false;
+
 import Layout from '../../layouts/Layout.astro';
 import { Header } from '../../components/Header';
 import { ProductDetailView } from '../../components/ProductDetailView';
@@ -6,21 +8,52 @@ import { Footer } from '../../components/Footer';
 import { FloatingWhatsApp } from '../../components/FloatingWhatsApp';
 import { SizeGuideModal } from '../../components/SizeGuideModal';
 import { INITIAL_PRODUCTS } from '../../data/mockData';
+import { supabase } from '../../lib/supabase';
+import { normalizeProduct } from '../../lib/store';
+import type { Product } from '../../types';
 
-export function getStaticPaths() {
-  return INITIAL_PRODUCTS.map((product) => ({
-    params: { slug: product.slug },
-    props: { product },
-  }));
+const { slug } = Astro.params;
+
+// 1. Buscar en INITIAL_PRODUCTS
+let product: Product | undefined = INITIAL_PRODUCTS.find((p) => p.slug === slug);
+
+// 2. Si no está en INITIAL_PRODUCTS, buscar en Supabase en tiempo real
+if (!product && slug) {
+  try {
+    const { data } = await supabase
+      .from('products')
+      .select('*, product_variants(*)')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (data) {
+      product = normalizeProduct(data);
+    }
+  } catch (err) {
+    console.error('Error al consultar producto en Supabase:', err);
+  }
 }
 
-const { product } = Astro.props;
+// 3. Fallback adicional por ID
+if (!product && slug) {
+  try {
+    const { data } = await supabase
+      .from('products')
+      .select('*, product_variants(*)')
+      .eq('id', slug)
+      .maybeSingle();
 
-const productSchema = {
+    if (data) {
+      product = normalizeProduct(data);
+    }
+  } catch (err) {}
+}
+
+const productSchema = product ? {
   '@context': 'https://schema.org',
   '@type': 'Product',
   name: product.name,
-  image: product.images.map((img: string) => `https://ezersport.com${img}`),
+  image: product.images.map((img: string) => img.startsWith('http') ? img : `https://ezersport.com${img}`),
   description: product.description,
   sku: product.id,
   brand: {
@@ -30,40 +63,69 @@ const productSchema = {
   offers: {
     '@type': 'Offer',
     url: `https://ezersport.com/producto/${product.slug}`,
-    priceCurrency: 'USD',
-    price: product.basePriceUSD,
+    priceCurrency: 'VED',
     availability: 'https://schema.org/InStock',
     seller: {
       '@type': 'Organization',
       name: 'Ezer Sport Confección Textil',
     },
   },
-};
+} : undefined;
 ---
 
-<Layout
-  title={`${product.name} | Ezer Sport`}
-  description={product.description}
-  image={product.images[0]}
-  keywords={`${product.name}, confeccion venezuela, ropa infantil, uniformes, sueteres, pijamas niños, ezer sport`}
-  productSchema={productSchema}
->
-  <Header client:load />
-  <main class="flex-1 bg-[#f8fafc]">
-    <!-- Breadcrumb for SEO -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-      <nav class="flex text-xs sm:text-sm text-slate-500 gap-2 items-center">
-        <a href="/" class="hover:text-[#009fe3] transition-colors">Inicio</a>
-        <span>/</span>
-        <a href="/#catalogo" class="hover:text-[#009fe3] transition-colors">Catálogo</a>
-        <span>/</span>
-        <span class="text-slate-800 font-medium truncate">{product.name}</span>
-      </nav>
-    </div>
+{product ? (
+  <Layout
+    title={`${product.name} | Ezer Sport`}
+    description={product.description}
+    image={product.images[0]}
+    keywords={`${product.name}, confeccion venezuela, ropa infantil, uniformes, sueteres, pijamas niños, ezer sport`}
+    productSchema={productSchema}
+  >
+    <Header client:load />
+    <main class="flex-1 bg-[#f8fafc]">
+      <!-- Breadcrumb for SEO -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <nav class="flex text-xs sm:text-sm text-slate-500 gap-2 items-center">
+          <a href="/" class="hover:text-[#009fe3] transition-colors">Inicio</a>
+          <span>/</span>
+          <a href="/#catalogo" class="hover:text-[#009fe3] transition-colors">Catálogo</a>
+          <span>/</span>
+          <span class="text-slate-800 font-medium truncate">{product.name}</span>
+        </nav>
+      </div>
 
-    <ProductDetailView client:load product={product} />
-  </main>
-  <Footer />
-  <FloatingWhatsApp />
-  <SizeGuideModal client:idle />
-</Layout>
+      <ProductDetailView client:load product={product} />
+    </main>
+    <Footer />
+    <FloatingWhatsApp />
+    <SizeGuideModal client:idle />
+  </Layout>
+) : (
+  <Layout
+    title="Prenda no encontrada | Ezer Sport"
+    description="No se encontró la prenda seleccionada en nuestro catálogo."
+  >
+    <Header client:load />
+    <main class="flex-1 bg-[#f8fafc] py-24 flex items-center justify-center">
+      <div class="max-w-md mx-auto px-4 text-center space-y-5">
+        <div class="w-16 h-16 rounded-3xl bg-blue-50 text-[#009fe3] flex items-center justify-center mx-auto text-2xl font-bold">
+          EZ
+        </div>
+        <h1 class="font-display font-black text-2xl sm:text-3xl text-slate-900">
+          Prenda no encontrada
+        </h1>
+        <p class="text-sm text-slate-600 leading-relaxed">
+          La prenda que buscas no está disponible o su enlace ha cambiado. Te invitamos a revisar los modelos disponibles en nuestro catálogo.
+        </p>
+        <a
+          href="/#catalogo"
+          class="inline-block bg-[#009fe3] hover:bg-[#0087c2] text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-md transition-all active:scale-95"
+        >
+          Volver al Catálogo
+        </a>
+      </div>
+    </main>
+    <Footer />
+  </Layout>
+)}
+

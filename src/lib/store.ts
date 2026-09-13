@@ -517,13 +517,13 @@ export function calculateCartSummary(
       // Mensaje de incentivo para siguiente tramo
       if (totalProductUnits < 3 && product.tier3PriceUSD) {
         const remaining = 3 - totalProductUnits;
-        volumeTierMessage = `¡Agrega ${remaining} prenda${remaining > 1 ? 's' : ''} más para activar precio especial x3 ($${product.tier3PriceUSD.toFixed(2)} c/u)!`;
+        volumeTierMessage = `¡Agrega ${remaining} prenda${remaining > 1 ? 's' : ''} más para activar precio especial x3 (${formatBs(product.tier3PriceUSD * currentRate)} c/u)!`;
       } else if (totalProductUnits >= 3 && totalProductUnits < 6 && product.tier6PriceUSD) {
         const remaining = 6 - totalProductUnits;
-        volumeTierMessage = `¡Estás a ${remaining} prenda${remaining > 1 ? 's' : ''} de precio de MEDIA DOCENA ($${product.tier6PriceUSD.toFixed(2)} c/u)!`;
+        volumeTierMessage = `¡Estás a ${remaining} prenda${remaining > 1 ? 's' : ''} de precio de MEDIA DOCENA (${formatBs(product.tier6PriceUSD * currentRate)} c/u)!`;
       } else if (totalProductUnits >= 6 && totalProductUnits < 12 && product.tier12PriceUSD) {
         const remaining = 12 - totalProductUnits;
-        volumeTierMessage = `¡Añade ${remaining} prenda${remaining > 1 ? 's' : ''} para precio DOCENA MAYORISTA ($${product.tier12PriceUSD.toFixed(2)} c/u)!`;
+        volumeTierMessage = `¡Añade ${remaining} prenda${remaining > 1 ? 's' : ''} para precio DOCENA MAYORISTA (${formatBs(product.tier12PriceUSD * currentRate)} c/u)!`;
       }
     }
 
@@ -555,7 +555,7 @@ export function calculateCartSummary(
       deliveryIsFree = false;
       if (selectedZone.freeDeliveryMinUSD) {
         const needed = selectedZone.freeDeliveryMinUSD - subtotalUSD;
-        freeDeliveryMessage = `¡Agrega $${needed.toFixed(2)} más para obtener Entrega GRATIS!`;
+        freeDeliveryMessage = `¡Agrega ${formatBs(needed * currentRate)} más para obtener Entrega GRATIS!`;
       }
     }
   }
