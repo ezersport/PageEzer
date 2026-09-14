@@ -288,31 +288,53 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               <span className="text-[#009fe3] font-bold">{selectedColor}</span>
             </label>
 
-            <div className="flex flex-wrap gap-2.5">
+            {/* Círculos de Color Textil */}
+            <div className="flex items-center gap-4 flex-wrap pt-1">
               {availableColors.map((col) => {
                 const isSelected = selectedColor === col;
                 const colVariant = safeVariants.find(
                   (v) => (v.colorName || v.optionName || 'Color Estándar') === col
                 );
                 const hex = colVariant?.colorHex || '#009fe3';
+                const isLight =
+                  hex.toLowerCase() === '#ffffff' ||
+                  hex.toLowerCase() === '#fff' ||
+                  hex.toLowerCase().startsWith('#f') ||
+                  hex.toLowerCase().startsWith('#e');
 
                 return (
                   <button
                     key={col}
                     type="button"
                     onClick={() => setSelectedColor(col)}
-                    className={`px-4 py-2.5 rounded-2xl text-sm font-medium transition-all flex items-center gap-2 border cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#009fe3] text-white border-[#009fe3] shadow-md shadow-cyan-500/20'
-                        : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
-                    }`}
+                    className="group flex flex-col items-center gap-1.5 cursor-pointer focus:outline-none"
+                    title={col}
                   >
-                    <span
-                      className="w-4 h-4 rounded-full border border-slate-300 shadow-sm shrink-0"
+                    <div
+                      className={`w-12 h-12 rounded-full transition-all duration-200 flex items-center justify-center shadow-sm ${
+                        isSelected
+                          ? 'ring-3 ring-[#009fe3] ring-offset-2 scale-110 border-2 border-white'
+                          : 'border-2 border-slate-300 hover:scale-105 hover:border-slate-400'
+                      }`}
                       style={{ backgroundColor: hex }}
-                    />
-                    <span>{col}</span>
-                    {isSelected && <Check className="w-4 h-4 shrink-0" />}
+                    >
+                      {isSelected && (
+                        <Check
+                          className={`w-5 h-5 drop-shadow-xs ${
+                            isLight ? 'text-slate-900' : 'text-white'
+                          }`}
+                        />
+                      )}
+                    </div>
+                    <span
+                      className={`text-xs font-bold transition-colors ${
+                        isSelected
+                          ? 'text-[#009fe3]'
+                          : 'text-slate-600 group-hover:text-slate-900'
+                      }`}
+                    >
+                      {col}
+                    </span>
                   </button>
                 );
               })}
