@@ -166,14 +166,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       });
     } catch (err) {}
 
-    // Formatear mensaje oficial para WhatsApp Ezer Sport (Limpio, conciso, seguro y solo en Bs)
+    // Formatear mensaje oficial para WhatsApp Ezer Sport (Limpio, conciso, seguro y con detalle de entrega)
     const itemsListText = cartItems
-      .map(
-        (item) =>
-          `* ${item.quantity}x ${item.productName} (${item.optionName} / Talla ${item.size}) - ${formatBs(
-            item.appliedUnitPriceUSD * item.quantity * currentRate
-          )}`
-      )
+      .map((item) => {
+        const isBajoPedido = item.availability === 'bajo_pedido' || item.isBajoPedido;
+        const statusTag = isBajoPedido
+          ? `[BAJO PEDIDO - ${item.productionDays || 2} días hábiles]`
+          : `[EN STOCK - INMEDIATO]`;
+        const colorText = item.colorName && item.colorName !== item.optionName ? ` / Color: ${item.colorName}` : '';
+
+        return `* ${item.quantity}x ${item.productName} (${item.optionName}${colorText} / Talla ${item.size}) ${statusTag} - ${formatBs(
+          item.appliedUnitPriceUSD * item.quantity * currentRate
+        )}`;
+      })
       .join('\n');
 
     const paymentLabel =
@@ -192,12 +197,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       .replace(/\s*\([^)]*\$[^)]*\)/gi, '')
       .trim();
 
+    const leadTimeFormatted = summary.maxLeadDays === 1 ? '1 día hábil' : `${summary.maxLeadDays || 2} días hábiles`;
+
     const whatsappMessage = `¡Hola Ezer Sport! Deseo formalizar el siguiente pedido:
 
 *Pedido ${orderNumber}*
 --------------------------------
 ${itemsListText}
-${summary.hasMadeToOrderItems ? '\nNota: Incluye prendas bajo confeccion (4 a 7 dias habiles).\n' : ''}
+${summary.hasMadeToOrderItems ? `\n⏱️ *Nota:* Incluye prendas bajo confección en taller (${leadTimeFormatted}).\n` : ''}
 - Subtotal: ${formatBs(summary.subtotalBs)}
 - Entrega: ${cleanZoneName}
 - Costo Envio: ${deliveryCostText}
@@ -442,7 +449,7 @@ ${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetai
 
             {summary.hasMadeToOrderItems && (
               <div className="py-1 text-xs text-amber-800 font-medium">
-                ⚠️ Incluye prendas bajo pedido (tiempo de confección: 2-4 días hábiles).
+                ⚠️ Incluye prendas bajo pedido (tiempo de confección en taller: {summary.maxLeadDays === 1 ? '1 día hábil' : `${summary.maxLeadDays || 2} días hábiles`}).
               </div>
             )}
 

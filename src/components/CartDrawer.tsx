@@ -109,7 +109,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
             {summary.hasMadeToOrderItems && (
               <div className="flex items-center gap-2 text-xs text-amber-800 bg-amber-50 p-2 rounded-xl border border-amber-200">
                 <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Incluye prendas bajo pedido (confección: 2-4 días hábiles).</span>
+                <span>
+                  Incluye prendas bajo pedido (confección en taller: {summary.maxLeadDays === 1 ? '1 día hábil' : `${summary.maxLeadDays || 2} días hábiles`}).
+                </span>
               </div>
             )}
           </div>

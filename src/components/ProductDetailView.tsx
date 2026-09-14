@@ -161,14 +161,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                 </span>
               )}
 
-              {product.availability === 'inmediato' ? (
+              {selectedVariant && selectedVariant.stock > 0 ? (
                 <span className="bg-emerald-600 text-white text-xs sm:text-sm font-semibold px-3 py-1 rounded-full shadow-md">
-                  🟢 Stock en Almacén (24-48h)
+                  🟢 Stock en Almacén ({selectedVariant.stock} pzs)
                 </span>
               ) : (
                 <span className="bg-amber-500 text-white text-xs sm:text-sm font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
-                  <span>Confección Taller (4-7 días)</span>
+                  <span>Confección Taller ({product.productionDays || 2} días hábiles)</span>
                 </span>
               )}
             </div>
@@ -189,6 +189,37 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed pt-1">
               {product.description}
             </p>
+
+            {/* Availability Notice Dinámico */}
+            {(() => {
+              const isVariantInStock = Boolean(selectedVariant && selectedVariant.stock > 0);
+              const leadDays = product.productionDays || 2;
+              const leadDaysText = leadDays === 1 ? '1 día hábil' : `${leadDays} días hábiles`;
+
+              return (
+                <div
+                  className={`p-3.5 rounded-2xl border text-xs sm:text-sm transition-colors mt-2 ${
+                    isVariantInStock
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-amber-50 border-amber-200 text-amber-800'
+                  }`}
+                >
+                  {isVariantInStock ? (
+                    <span className="font-medium flex items-center gap-2">
+                      <span className="text-base font-bold">✓</span>
+                      <span>Prenda disponible en stock: entrega inmediata / despacho en 24 a 48 horas hábiles.</span>
+                    </span>
+                  ) : (
+                    <span className="font-medium flex items-center gap-2">
+                      <Clock className="w-4 h-4 shrink-0 text-amber-600" />
+                      <span>
+                        Confección bajo pedido: tiempo estimado de corte y costura de <strong>{leadDaysText}</strong>.
+                      </span>
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Price Box */}
@@ -218,25 +249,35 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             <div className="flex flex-wrap gap-2.5">
               {availableOptions.map((opt) => {
                 const isSelected = selectedOption === opt;
+                const optVariant = safeVariants.find((v) => (v.optionName || 'Estándar') === opt);
+                const hex = optVariant?.colorHex;
+                const colorLabel = optVariant?.colorName && optVariant.colorName !== opt ? ` (${optVariant.colorName})` : '';
+
                 return (
                   <button
                     key={opt}
                     onClick={() => setSelectedOption(opt)}
-                    className={`px-4 py-2.5 rounded-2xl text-sm font-medium transition-all flex items-center gap-2 border ${
+                    className={`px-4 py-2.5 rounded-2xl text-sm font-medium transition-all flex items-center gap-2 border cursor-pointer ${
                       isSelected
                         ? 'bg-[#009fe3] text-white border-[#009fe3] shadow-md shadow-cyan-500/20'
                         : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
                     }`}
                   >
-                    {isSelected && <Check className="w-4 h-4" />}
-                    <span>{opt}</span>
+                    {hex && (
+                      <span
+                        className="w-4 h-4 rounded-full border border-slate-300 shadow-sm shrink-0"
+                        style={{ backgroundColor: hex }}
+                      />
+                    )}
+                    <span>{opt}{colorLabel}</span>
+                    {isSelected && <Check className="w-4 h-4 shrink-0" />}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Selector 2: Talla */}
+          {/* Selector 2: Talla (100% Seleccionable) */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm sm:text-base font-semibold text-slate-900">
@@ -245,7 +286,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               <button
                 type="button"
                 onClick={() => emitEvent('ezer-open-size-guide')}
-                className="text-xs sm:text-sm text-[#009fe3] hover:underline font-semibold flex items-center gap-1"
+                className="text-xs sm:text-sm text-[#009fe3] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <span>Ver tabla de medidas en cm</span>
               </button>
@@ -258,17 +299,29 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                 return (
                   <button
                     key={v.id}
-                    disabled={!hasStock}
                     onClick={() => setSelectedVariant(v)}
-                    className={`min-w-[56px] py-3 px-4 rounded-2xl text-sm sm:text-base font-medium transition-all border ${
+                    className={`min-w-[64px] py-2.5 px-3.5 rounded-2xl text-sm font-medium transition-all border flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                       isSelected
-                        ? 'bg-[#0c3b74] text-white border-[#0c3b74] shadow-md font-semibold'
+                        ? hasStock
+                          ? 'bg-[#0c3b74] text-white border-[#0c3b74] shadow-md font-semibold'
+                          : 'bg-amber-600 text-white border-amber-600 shadow-md font-semibold'
                         : hasStock
                         ? 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
-                        : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed line-through'
+                        : 'bg-amber-50/60 text-slate-700 border-amber-200 hover:border-amber-300'
                     }`}
                   >
-                    {v.size}
+                    <span className="font-bold text-sm sm:text-base">{v.size}</span>
+                    <span
+                      className={`text-[10px] leading-tight ${
+                        isSelected
+                          ? 'text-white/85'
+                          : hasStock
+                          ? 'text-emerald-600 font-semibold'
+                          : 'text-amber-600 font-semibold'
+                      }`}
+                    >
+                      {hasStock ? `${v.stock} disp.` : 'Bajo pedido'}
+                    </span>
                   </button>
                 );
               })}
@@ -321,7 +374,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               <div className="flex items-center bg-slate-100 rounded-2xl border border-slate-200 p-1">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors"
+                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Restar cantidad"
                 >
                   <Minus className="w-5 h-5" />
@@ -331,37 +384,51 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                 </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors"
+                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Sumar cantidad"
                 >
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Add to cart */}
-              <button
-                onClick={handleAddToCart}
-                disabled={!selectedVariant || selectedVariant.stock === 0}
-                className={`flex-1 py-4 px-6 rounded-2xl font-display font-semibold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 active:scale-95 shadow-md ${
-                  addedAnimation
-                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                    : 'bg-[#009fe3] hover:bg-[#0087c2] text-white shadow-cyan-500/20'
-                }`}
-              >
-                <ShoppingBag className="w-5 h-5" />
-                <span>
-                  {addedAnimation
-                    ? '¡Agregado al Carrito!'
-                    : `Agregar ${quantity} al Carrito`}
-                </span>
-              </button>
+              {/* Add to cart dinámico */}
+              {(() => {
+                const isVariantInStock = Boolean(selectedVariant && selectedVariant.stock > 0);
+
+                return (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={!selectedVariant}
+                    className={`flex-1 py-4 px-6 rounded-2xl font-display font-semibold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 active:scale-95 shadow-md cursor-pointer ${
+                      addedAnimation
+                        ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                        : isVariantInStock
+                        ? 'bg-[#009fe3] hover:bg-[#0087c2] text-white shadow-cyan-500/20'
+                        : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/25'
+                    }`}
+                  >
+                    {isVariantInStock ? (
+                      <ShoppingBag className="w-5 h-5" />
+                    ) : (
+                      <Clock className="w-5 h-5" />
+                    )}
+                    <span>
+                      {addedAnimation
+                        ? '¡Agregado al Carrito!'
+                        : isVariantInStock
+                        ? `Agregar ${quantity} al Carrito`
+                        : `Encargar Bajo Pedido (${quantity})`}
+                    </span>
+                  </button>
+                );
+              })()}
             </div>
 
             {/* Direct WhatsApp button option */}
             <button
               onClick={handleDirectWhatsApp}
-              disabled={!selectedVariant || selectedVariant.stock === 0}
-              className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 font-display font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-colors shadow-sm"
+              disabled={!selectedVariant}
+              className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 font-display font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
             >
               <span>Consultar o pedir directamente por WhatsApp</span>
             </button>

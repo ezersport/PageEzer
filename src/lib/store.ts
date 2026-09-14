@@ -43,8 +43,9 @@ export function normalizeProduct(p: any): Product {
     id: String(v.id || `v-${idx}`),
     size: String(v.size || v.talla || 'Única'),
     optionName: String(v.optionName || v.nombre_variante || 'Estándar'),
+    colorName: String(v.colorName || v.color_base || v.nombre_variante || 'Color Estándar'),
     colorHex: String(v.colorHex || v.codigo_hex || '#009fe3'),
-    stock: Number(v.stock ?? v.stock_disponible ?? 10),
+    stock: Number(v.stock ?? v.stock_disponible ?? 0),
     imagePreview: v.imagePreview || v.imagen_variante_url || fallbackImage,
   }));
 
@@ -54,6 +55,7 @@ export function normalizeProduct(p: any): Product {
       id: `var-std-${p.id || '1'}`,
       size: 'Única',
       optionName: 'Modelo Estándar de Taller',
+      colorName: 'Color Estándar',
       colorHex: '#009fe3',
       stock: 99,
       imagePreview: fallbackImage,
@@ -69,6 +71,7 @@ export function normalizeProduct(p: any): Product {
     variantType: p.variantType || (p.variantes?.[0]?.tipo_variante === 'estampado' ? 'print' : 'color'),
     fabric: String(p.fabric || p.tela_material || 'Algodón Confección'),
     availability: p.availability || p.disponibilidad || 'inmediato',
+    productionDays: Number(p.productionDays ?? p.dias_confeccion ?? p.diasConfeccion ?? 2),
     basePriceUSD: Number(p.basePriceUSD ?? p.precio_detal_usd ?? 0),
     tier3PriceUSD: Number(p.tier3PriceUSD ?? p.precio_3_piezas_usd ?? 0),
     tier6PriceUSD: Number(p.tier6PriceUSD ?? p.precio_mayor_usd ?? 0),
@@ -405,6 +408,7 @@ export function addToCart(
   quantity: number = 1
 ) {
   const cart = getCartItems();
+  const isBajoPedido = variant.stock <= 0;
   const cartItemId = `${product.id}-${variant.id}`;
   const existingIndex = cart.findIndex((item) => item.cartItemId === cartItemId);
 
@@ -418,9 +422,13 @@ export function addToCart(
       variantId: variant.id,
       size: variant.size,
       optionName: variant.optionName,
+      colorName: variant.colorName,
+      colorHex: variant.colorHex,
       variantType: product.variantType,
-      availability: product.availability,
-      image: product.images[0] || '/images/kids-sweaters.webp',
+      availability: isBajoPedido ? 'bajo_pedido' : 'inmediato',
+      isBajoPedido,
+      productionDays: product.productionDays || 2,
+      image: (product.images && product.images[0]) || '/images/kids-sweaters.webp',
       quantity,
       basePriceUSD: product.basePriceUSD,
       appliedUnitPriceUSD: product.basePriceUSD,
@@ -466,6 +474,7 @@ export interface CartCalculationResult {
   totalUSD: number;
   totalBs: number;
   hasMadeToOrderItems: boolean;
+  maxLeadDays: number;
   volumeTierMessage?: string;
   freeDeliveryMessage?: string;
 }
@@ -488,6 +497,7 @@ export function calculateCartSummary(
   let totalWithoutDiscountsUSD = 0;
   let totalUnits = 0;
   let hasMadeToOrderItems = false;
+  let maxLeadDays = 0;
   let volumeTierMessage: string | undefined;
 
   const calculatedItems = items.map((item) => {
@@ -495,8 +505,11 @@ export function calculateCartSummary(
     const totalProductUnits = productQuantityMap[item.productId] || item.quantity;
     totalUnits += item.quantity;
 
-    if (item.availability === 'bajo_pedido') {
+    const isItemBajoPedido = item.availability === 'bajo_pedido' || Boolean(item.isBajoPedido);
+    if (isItemBajoPedido) {
       hasMadeToOrderItems = true;
+      const days = item.productionDays || product?.productionDays || 2;
+      if (days > maxLeadDays) maxLeadDays = days;
     }
 
     let appliedPrice = item.basePriceUSD;
@@ -579,6 +592,7 @@ export function calculateCartSummary(
     totalUSD,
     totalBs,
     hasMadeToOrderItems,
+    maxLeadDays: maxLeadDays || 2,
     volumeTierMessage,
     freeDeliveryMessage,
   };

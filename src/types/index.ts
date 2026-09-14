@@ -18,6 +18,7 @@ export interface ProductVariant {
   id: string;
   size: string; // '2-4', '6-8', '10-14', 'S', 'M', 'L', 'XL'
   optionName: string; // 'Mickey Celeste', 'Jirafita Peach', 'Dino Verde', etc.
+  colorName?: string; // Ej: 'Rosado Pastel', 'Azul Rey'
   colorHex?: string;
   imagePreview?: string;
   stock: number;
@@ -39,7 +40,8 @@ export interface Product {
   description: string;
   variantType: VariantType;
   fabric?: string; // ej. '50% Poliéster 50% Algodón Afelpado'
-  availability: ProductAvailability; // 'inmediato' (en stock) | 'bajo_pedido' (confección 4-7 días)
+  availability: ProductAvailability; // 'inmediato' (en stock) | 'bajo_pedido'
+  productionDays?: number; // Días hábiles de confección registrados en taller
   basePriceUSD: number; // 1 unidad (detal)
   tier3PriceUSD?: number; // 3 unidades
   tier6PriceUSD?: number; // 6 unidades (Mayorista de fábrica oficial)
@@ -78,8 +80,12 @@ export interface CartItem {
   variantId: string;
   size: string;
   optionName: string;
+  colorName?: string;
+  colorHex?: string;
   variantType: VariantType;
   availability: ProductAvailability;
+  isBajoPedido?: boolean;
+  productionDays?: number;
   image: string;
   quantity: number;
   basePriceUSD: number;
