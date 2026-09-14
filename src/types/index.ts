@@ -73,6 +73,14 @@ export interface ExchangeRateRecord {
   note?: string;
 }
 
+export interface AppConfig {
+  id?: string;
+  tasa_bcv: number;
+  entregas_caracas_activas: boolean;
+  horario_caracas?: string;
+  mensaje_anuncio?: string;
+}
+
 export interface CartItem {
   cartItemId: string;
   productId: string;

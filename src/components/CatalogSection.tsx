@@ -12,7 +12,7 @@ import { ProductCard } from './ProductCard';
 import { ProductModal } from './ProductModal';
 import { CartDrawer } from './CartDrawer';
 import { CheckoutModal } from './CheckoutModal';
-import { Search, Scissors } from 'lucide-react';
+import { Search, Scissors, Flame } from 'lucide-react';
 
 export const CatalogSection: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -127,36 +127,45 @@ export const CatalogSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Tabs & Pricing Legend */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-2">
-        {/* Category Pill Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 scrollbar-none">
-          {displayTabs.map((tab) => {
-            const isSelected = selectedCategory === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedCategory(tab.id as any)}
-                className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#0c3b74] text-white shadow-md shadow-blue-950/20'
-                    : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:border-slate-300'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+      {/* Pricing tier quick guide banner (Dedicated, clean, separate from categories) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:px-5 rounded-2xl bg-blue-50/70 border border-blue-100/90 text-xs sm:text-sm text-slate-800 shadow-sm">
+        <div className="flex items-center gap-2 font-bold text-[#0c3b74]">
+          <Flame className="w-4 h-4 text-amber-500 shrink-0" />
+          <span>Precios de Fábrica por Volumen:</span>
         </div>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap font-medium">
+          <span className="text-slate-600 bg-white px-2.5 py-1 rounded-xl border border-slate-200/80 shadow-xs">
+            Detal: 1 unidad
+          </span>
+          <span className="text-slate-300">•</span>
+          <span className="text-[#009fe3] font-semibold bg-white px-2.5 py-1 rounded-xl border border-blue-100 shadow-xs">
+            x3 piezas: Precio promo
+          </span>
+          <span className="text-slate-300">•</span>
+          <span className="text-emerald-700 font-bold bg-white px-2.5 py-1 rounded-xl border border-emerald-200 shadow-xs">
+            Mayorista: desde 6 piezas 🔥
+          </span>
+        </div>
+      </div>
 
-        {/* Pricing tier quick guide badge */}
-        <div className="flex items-center gap-3 text-xs sm:text-sm font-medium text-slate-800 bg-white px-5 py-2.5 rounded-2xl border border-blue-100 shadow-sm shrink-0">
-          <span className="text-slate-600">Detal: 1 unidad</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-[#009fe3] font-semibold">x3 piezas: Precio promo</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-emerald-700 font-bold">Mayorista: desde 6 piezas 🔥</span>
-        </div>
+      {/* Category Tabs (Full width, clean and unobstructed) */}
+      <div className="flex items-center gap-2.5 overflow-x-auto w-full pb-2 scrollbar-none">
+        {displayTabs.map((tab) => {
+          const isSelected = selectedCategory === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedCategory(tab.id as any)}
+              className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                isSelected
+                  ? 'bg-[#0c3b74] text-white shadow-md shadow-blue-950/20'
+                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:border-slate-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Products Grid */}

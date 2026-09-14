@@ -159,16 +159,31 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
                   <h4 className="font-display font-semibold text-sm sm:text-base text-slate-900 truncate">
                     {item.productName}
                   </h4>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-600">
-                    <span className="bg-slate-100 px-2 py-0.5 rounded font-medium text-slate-700">
-                      {item.size}
+                  <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-600 flex-wrap">
+                    <span className="bg-slate-100 px-2 py-0.5 rounded-md font-bold text-slate-800 border border-slate-200">
+                      Talla {item.size}
                     </span>
-                    <span className="text-[#009fe3] font-medium truncate">
-                      {item.optionName}
+                    <span className="inline-flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-md font-semibold text-slate-800 border border-slate-200">
+                      {item.colorHex && (
+                        <span
+                          className="w-2.5 h-2.5 rounded-full border border-slate-300 shadow-xs shrink-0"
+                          style={{ backgroundColor: item.colorHex }}
+                        />
+                      )}
+                      <span>{item.colorName || item.optionName}</span>
                     </span>
-                    {item.availability === 'bajo_pedido' && (
-                      <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100">
-                        Bajo Pedido
+                    {item.optionName && item.colorName && item.optionName.toLowerCase() !== item.colorName.toLowerCase() && (
+                      <span className="text-slate-500 font-medium text-[11px] truncate">
+                        • {item.optionName}
+                      </span>
+                    )}
+                    {item.availability === 'bajo_pedido' || item.isBajoPedido ? (
+                      <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full border border-amber-200">
+                        ⏱️ Bajo Pedido
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200">
+                        🟢 En Stock
                       </span>
                     )}
                   </div>

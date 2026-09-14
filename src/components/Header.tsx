@@ -7,8 +7,10 @@ import {
   calculateCartSummary,
   formatBs,
   emitEvent,
+  getAppConfig,
+  fetchAppConfigFromSupabase,
 } from '../lib/store';
-import type { CartItem } from '../types';
+import type { CartItem, AppConfig } from '../types';
 import { EzLogo } from './EzLogo';
 
 export const Header: React.FC = () => {
@@ -34,39 +36,60 @@ export const Header: React.FC = () => {
       setCurrentRate(e.detail?.currentRate || getCurrentRate());
     };
 
+    const handleConfigUpdate = (e: any) => {
+      if (e.detail?.config) setAppConfig(e.detail.config);
+    };
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener('ezer-cart-updated', handleCartUpdate);
     window.addEventListener('ezer-rate-updated', handleRateUpdate);
+    window.addEventListener('ezer-config-updated', handleConfigUpdate);
     window.addEventListener('scroll', handleScroll);
 
     return () => {
       window.removeEventListener('ezer-cart-updated', handleCartUpdate);
       window.removeEventListener('ezer-rate-updated', handleRateUpdate);
+      window.removeEventListener('ezer-config-updated', handleConfigUpdate);
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  const [appConfig, setAppConfig] = useState<AppConfig>(getAppConfig());
 
   const cartSummary = calculateCartSummary(cartItems, currentRate);
   const totalUnits = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <header className="sticky top-0 z-40 w-full transition-all duration-300">
-      {/* Top Announcement Bar */}
+      {/* Top Announcement Bar Dinámico */}
       <div className="bg-[#0c3b74] text-white text-xs sm:text-sm py-2 px-4 font-normal tracking-wide">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap text-ellipsis mx-auto sm:mx-0">
-            <span className="flex h-2 w-2 rounded-full bg-[#d0d709] animate-pulse"></span>
-            <span className="font-medium text-[#d0d709]">¡Entregas los Sábados!</span>
-            <span className="text-blue-200 hidden sm:inline">•</span>
-            <span className="text-blue-100">
-              Caracas: <strong className="text-white">Plaza Venezuela (Punto de Encuentro)</strong> | Gratis en <strong className="text-white">Los Teques (Metro)</strong> | San Antonio <strong className="text-white">(Altos Mirandinos)</strong>
-            </span>
+            {appConfig.entregas_caracas_activas ? (
+              <>
+                <span className="flex h-2 w-2 rounded-full bg-[#d0d709] animate-pulse shrink-0"></span>
+                <span className="font-semibold text-[#d0d709]">¡Entregas los Sábados!</span>
+                <span className="text-blue-200 hidden sm:inline">•</span>
+                <span className="text-blue-100">
+                  Caracas: <strong className="text-white">Plaza Venezuela</strong> • <strong className="text-white">Los Teques y San Antonio</strong> con delivery
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="flex h-2 w-2 rounded-full bg-rose-400 shrink-0"></span>
+                <span className="font-bold text-rose-300">⚠️ Entregas Caracas en pausa esta semana</span>
+                <span className="text-blue-200 hidden sm:inline">•</span>
+                <span className="text-blue-100">
+                  Activo delivery en <strong className="text-white">Los Teques y San Antonio</strong>
+                </span>
+              </>
+            )}
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-blue-100 font-medium">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-blue-100 font-medium shrink-0">
             <Truck className="w-3.5 h-3.5 text-[#d0d709]" />
             <span>Envíos a toda Venezuela (MRW, Zoom, Tealca)</span>
           </div>

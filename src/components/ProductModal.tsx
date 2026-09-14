@@ -23,10 +23,44 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
         imagePreview: (product.images && product.images[0]) || '/images/conjunto-ninos-mickey.webp',
       }];
 
-  const availableOptions = Array.from(new Set(safeVariants.map((v) => v.optionName || 'Estándar')));
-  const [selectedOption, setSelectedOption] = useState<string>(availableOptions[0] || 'Estándar');
+  // Lista única de colores disponibles en la prenda
+  const availableColors = Array.from(
+    new Set(
+      safeVariants
+        .map((v) => v.colorName || v.optionName || 'Color Estándar')
+        .filter(Boolean)
+    )
+  );
 
-  const matchingVariants = safeVariants.filter((v) => (v.optionName || 'Estándar') === selectedOption);
+  const [selectedColor, setSelectedColor] = useState<string>(
+    availableColors[0] || 'Color Estándar'
+  );
+
+  // Variantes correspondientes al color seleccionado
+  const variantsForColor = safeVariants.filter(
+    (v) => (v.colorName || v.optionName || 'Color Estándar') === selectedColor
+  );
+
+  // Motivos / Estampas disponibles para este color
+  const availableMotifs = Array.from(
+    new Set(
+      variantsForColor
+        .map((v) => v.optionName)
+        .filter((opt) => opt && opt !== selectedColor && opt !== 'Estándar')
+    )
+  );
+
+  const [selectedMotif, setSelectedMotif] = useState<string>(
+    availableMotifs[0] || ''
+  );
+
+  const matchingVariants = variantsForColor.filter((v) => {
+    if (availableMotifs.length > 1 && selectedMotif) {
+      return v.optionName === selectedMotif;
+    }
+    return true;
+  });
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     matchingVariants[0] || safeVariants[0]
   );
@@ -35,13 +69,26 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
   const [addedAnimation, setAddedAnimation] = useState(false);
 
   useEffect(() => {
-    const newMatches = safeVariants.filter((v) => (v.optionName || 'Estándar') === selectedOption);
+    const firstColor = availableColors[0] || 'Color Estándar';
+    setSelectedColor(firstColor);
+  }, [product]);
+
+  useEffect(() => {
+    const newMatches = safeVariants.filter(
+      (v) => (v.colorName || v.optionName || 'Color Estándar') === selectedColor
+    );
     if (newMatches.length > 0) {
-      setSelectedVariant(newMatches[0]);
+      const motifMatches = newMatches.filter((v) => {
+        if (availableMotifs.length > 1 && selectedMotif) {
+          return v.optionName === selectedMotif;
+        }
+        return true;
+      });
+      setSelectedVariant(motifMatches[0] || newMatches[0]);
     } else {
       setSelectedVariant(safeVariants[0]);
     }
-  }, [selectedOption, product]);
+  }, [selectedColor, selectedMotif, product]);
 
   useEffect(() => {
     setQuantity(1);
@@ -175,44 +222,72 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
             </div>
           </div>
 
-          {/* Selector 1: Estampado o Color */}
+          {/* Selector 1: Color de la Prenda */}
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <label className="text-sm font-semibold text-slate-800 flex items-center justify-between">
-              <span>
-                1. Elige el {product.variantType === 'print' ? 'Estampado / Motivo' : 'Color'}:
-              </span>
-              <span className="text-[#009fe3] font-bold">{selectedOption}</span>
+              <span>1. Elige el Color de la Prenda:</span>
+              <span className="text-[#009fe3] font-bold">{selectedColor}</span>
             </label>
 
             <div className="flex flex-wrap gap-2">
-              {availableOptions.map((opt) => {
-                const isSelected = selectedOption === opt;
-                const optVariant = safeVariants.find((v) => (v.optionName || 'Estándar') === opt);
-                const hex = optVariant?.colorHex;
-                const colorLabel = optVariant?.colorName && optVariant.colorName !== opt ? ` (${optVariant.colorName})` : '';
+              {availableColors.map((col) => {
+                const isSelected = selectedColor === col;
+                const colVariant = safeVariants.find(
+                  (v) => (v.colorName || v.optionName || 'Color Estándar') === col
+                );
+                const hex = colVariant?.colorHex || '#009fe3';
 
                 return (
                   <button
-                    key={opt}
-                    onClick={() => setSelectedOption(opt)}
+                    key={col}
+                    type="button"
+                    onClick={() => setSelectedColor(col)}
                     className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-2 border cursor-pointer ${
                       isSelected
                         ? 'bg-[#009fe3] text-white border-[#009fe3] shadow-sm'
                         : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    {hex && (
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-sm shrink-0"
-                        style={{ backgroundColor: hex }}
-                      />
-                    )}
-                    <span>{opt}{colorLabel}</span>
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-sm shrink-0"
+                      style={{ backgroundColor: hex }}
+                    />
+                    <span>{col}</span>
                     {isSelected && <Check className="w-4 h-4 shrink-0" />}
                   </button>
                 );
               })}
             </div>
+
+            {/* Sub-selector de Motivo / Estampa si hay varios para este color */}
+            {availableMotifs.length > 1 && (
+              <div className="pt-2">
+                <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                  Diseño / Motivo:
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {availableMotifs.map((motif) => (
+                    <button
+                      key={motif}
+                      type="button"
+                      onClick={() => setSelectedMotif(motif)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
+                        selectedMotif === motif
+                          ? 'bg-[#0c3b74] text-white border-[#0c3b74]'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      {motif}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {availableMotifs.length === 1 && (
+              <div className="text-xs text-slate-500 pt-1 font-medium">
+                Estampa / Técnica: <span className="font-semibold text-slate-700">{availableMotifs[0]}</span>
+              </div>
+            )}
           </div>
 
           {/* Selector 2: Talla (100% Seleccionable, sin bloqueos) */}

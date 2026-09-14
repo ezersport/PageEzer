@@ -39,15 +39,23 @@ export function normalizeProduct(p: any): Product {
 
   const fallbackImage = images.length > 0 ? images[0] : '/images/conjunto-ninos-mickey.webp';
 
-  const rawVariants = (Array.isArray(p.variants) ? p.variants : (Array.isArray(p.variantes) ? p.variantes : (Array.isArray(p.product_variants) ? p.product_variants : []))).map((v: any, idx: number) => ({
-    id: String(v.id || `v-${idx}`),
-    size: String(v.size || v.talla || 'Única'),
-    optionName: String(v.optionName || v.nombre_variante || 'Estándar'),
-    colorName: String(v.colorName || v.color_base || v.nombre_variante || 'Color Estándar'),
-    colorHex: String(v.colorHex || v.codigo_hex || '#009fe3'),
-    stock: Number(v.stock ?? v.stock_disponible ?? 0),
-    imagePreview: v.imagePreview || v.imagen_variante_url || fallbackImage,
-  }));
+  const rawVariants = (Array.isArray(p.variants) ? p.variants : (Array.isArray(p.variantes) ? p.variantes : (Array.isArray(p.product_variants) ? p.product_variants : []))).map((v: any, idx: number) => {
+    const rawColorBase = (v.color_base || v.colorName || '').trim();
+    const rawDesign = (v.nombre_variante || v.optionName || '').trim();
+    const hex = v.colorHex || v.codigo_hex || '#009fe3';
+    const colorName = rawColorBase || (v.tipo_variante === 'unicolor' && rawDesign ? rawDesign : 'Color Estándar');
+    const optionName = rawDesign || colorName;
+
+    return {
+      id: String(v.id || `v-${idx}`),
+      size: String(v.size || v.talla || 'Única'),
+      optionName,
+      colorName,
+      colorHex: hex,
+      stock: Number(v.stock ?? v.stock_disponible ?? 0),
+      imagePreview: v.imagePreview || v.imagen_variante_url || fallbackImage,
+    };
+  });
 
   // SI NO HAY VARIANTES REGISTRADAS, CREAR UNA VARIANTE SEGURA POR DEFECTO PARA QUE NUNCA CRASHEE EL FRONTEND
   const safeVariants: ProductVariant[] = rawVariants.length > 0 ? rawVariants : [
@@ -183,33 +191,69 @@ export async function fetchDeliveryZonesFromSupabase(): Promise<DeliveryZone[]> 
   }
 }
 
-// 4. Obtener Tasa de Cambio Oficial desde Supabase
-export async function fetchCurrentRateFromSupabase(): Promise<number> {
+const CONFIG_KEY = 'ezer_app_config_v1';
+
+export function getAppConfig(): AppConfig {
+  if (!isBrowser) {
+    return {
+      tasa_bcv: 76.50,
+      entregas_caracas_activas: true,
+      horario_caracas: 'Sábados en Plaza Venezuela frente a Torre La Previsora',
+      mensaje_anuncio: '¡Entregas los Sábados! • Caracas: Plaza Venezuela',
+    };
+  }
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {}
+  return {
+    tasa_bcv: 76.50,
+    entregas_caracas_activas: true,
+    horario_caracas: 'Sábados en Plaza Venezuela frente a Torre La Previsora',
+    mensaje_anuncio: '¡Entregas los Sábados! • Caracas: Plaza Venezuela',
+  };
+}
+
+export async function fetchAppConfigFromSupabase(): Promise<AppConfig> {
   try {
     const { data, error } = await supabase
       .from('app_config')
-      .select('tasa_bcv')
+      .select('*')
       .eq('id', 'global')
       .single();
 
     if (error) {
-      console.warn('Supabase fetchCurrentRate error:', error.message);
-      return getCurrentRate();
+      console.warn('Supabase fetchAppConfig error:', error.message);
+      return getAppConfig();
     }
 
-    if (data && data.tasa_bcv) {
-      const rate = Number(data.tasa_bcv);
+    if (data) {
+      const cfg: AppConfig = {
+        id: data.id,
+        tasa_bcv: Number(data.tasa_bcv || 76.50),
+        entregas_caracas_activas: Boolean(data.entregas_caracas_activas ?? true),
+        horario_caracas: data.horario_caracas || 'Sábados en Plaza Venezuela frente a Torre La Previsora',
+        mensaje_anuncio: data.mensaje_anuncio || '',
+      };
       if (isBrowser) {
-        localStorage.setItem('ezer_rate_single', String(rate));
-        emitEvent('ezer-rate-updated', { currentRate: rate });
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+        localStorage.setItem('ezer_rate_single', String(cfg.tasa_bcv));
+        emitEvent('ezer-config-updated', { config: cfg });
+        emitEvent('ezer-rate-updated', { currentRate: cfg.tasa_bcv });
       }
-      return rate;
+      return cfg;
     }
-    return getCurrentRate();
+    return getAppConfig();
   } catch (err) {
-    console.error('Error al obtener tasa de Supabase:', err);
-    return getCurrentRate();
+    console.error('Error al obtener config de Supabase:', err);
+    return getAppConfig();
   }
+}
+
+// 4. Obtener Tasa de Cambio Oficial desde Supabase
+export async function fetchCurrentRateFromSupabase(): Promise<number> {
+  const cfg = await fetchAppConfigFromSupabase();
+  return cfg.tasa_bcv || getCurrentRate();
 }
 
 // 5. Crear Pedido en Supabase
@@ -421,9 +465,9 @@ export function addToCart(
       productName: product.name,
       variantId: variant.id,
       size: variant.size,
-      optionName: variant.optionName,
-      colorName: variant.colorName,
-      colorHex: variant.colorHex,
+      optionName: variant.optionName || 'Estándar',
+      colorName: variant.colorName || 'Color Estándar',
+      colorHex: variant.colorHex || '#009fe3',
       variantType: product.variantType,
       availability: isBajoPedido ? 'bajo_pedido' : 'inmediato',
       isBajoPedido,

@@ -127,6 +127,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
         productName: item.productName,
         size: item.size,
         optionName: item.optionName,
+        colorName: item.colorName,
+        colorHex: item.colorHex,
         availability: item.availability,
         quantity: item.quantity,
         unitPriceUSD: item.appliedUnitPriceUSD,
@@ -173,9 +175,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
         const statusTag = isBajoPedido
           ? `[BAJO PEDIDO - ${item.productionDays || 2} días hábiles]`
           : `[EN STOCK - INMEDIATO]`;
-        const colorText = item.colorName && item.colorName !== item.optionName ? ` / Color: ${item.colorName}` : '';
+        const colorDisplay = item.colorName || item.optionName || 'Estándar';
+        const estampaDisplay = item.optionName && item.colorName && item.optionName.toLowerCase() !== item.colorName.toLowerCase()
+          ? ` • Estampa: ${item.optionName}`
+          : '';
 
-        return `* ${item.quantity}x ${item.productName} (${item.optionName}${colorText} / Talla ${item.size}) ${statusTag} - ${formatBs(
+        return `* ${item.quantity}x ${item.productName} (Talla: ${item.size} | Color: ${colorDisplay}${estampaDisplay}) ${statusTag} - ${formatBs(
           item.appliedUnitPriceUSD * item.quantity * currentRate
         )}`;
       })
