@@ -1,5 +1,4 @@
 ---
-import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 
 interface Props {
@@ -7,46 +6,55 @@ interface Props {
   description?: string;
   image?: string;
   keywords?: string;
-  schemaType?: string;
-  productSchema?: any;
+  /** 'website' para páginas generales, 'product' para fichas de producto */
+  ogType?: 'website' | 'product';
+  /** Evita que Google indexe la página (admin, 404, etc.) */
+  noindex?: boolean;
+  /** Precarga la imagen del hero (solo la home la necesita) */
+  preloadHero?: boolean;
+  /** Bloques JSON-LD adicionales propios de cada página */
+  schemas?: Record<string, any>[];
 }
+
+const SITE = 'https://ezersport.com';
 
 const {
   title = 'Ezer Sport | Pijamas para Niños, Uniformes, Ropa Deportiva, Suéteres y Monos al Mayor',
-  description = 'Taller de confección textil venezolano en Los Teques. Pijamas térmicas para niños, uniformes escolares y deportivos, suéteres hoodies con capucha, monos joggers afelpados y franelas al detal y precios de fábrica al mayor. Entregas en Caracas (Plaza Venezuela) y envíos a toda Venezuela.',
+  description = 'Taller de confección textil venezolano en Los Teques. Pijamas para niños, uniformes escolares y deportivos, suéteres, monos y franelas al detal y al mayor. Entregas en Caracas y envíos a toda Venezuela.',
   image = '/images/hero-full-banner.webp',
-  keywords = 'pijamas para niños, uniformes escolares, uniformes deportivos, ropa deportiva venezuela, sueteres con capucha, monos joggers niños, camisas al mayor, franelas algodon, confeccion textil los teques, fabrica de ropa caracas, ropa infantil mayorista, hoodies afelpados',
-  productSchema,
+  keywords = 'pijamas para niños, uniformes escolares, uniformes deportivos, ropa deportiva venezuela, sueteres con capucha, monos joggers niños, franelas al mayor, confeccion textil los teques, fabrica de ropa caracas, ropa infantil mayorista',
+  ogType = 'website',
+  noindex = false,
+  preloadHero = false,
+  schemas = [],
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://ezersport.com');
+const siteURL = Astro.site ?? new URL(SITE);
+const canonicalURL = new URL(Astro.url.pathname, siteURL).href;
+const absoluteImage = image.startsWith('http') ? image : new URL(image, siteURL).href;
 
-// Schema.org LocalBusiness & ClothingStore
+// Schema.org: negocio local (aparece en todas las páginas)
 const storeSchema = {
   '@context': 'https://schema.org',
   '@type': 'ClothingStore',
-  name: 'Ezer Sport | Taller de Confección Textil',
-  alternateName: 'Ezer Confecciones',
-  description: description,
-  url: 'https://ezersport.com',
-  logo: 'https://ezersport.com/images/ezer-logo.webp',
-  image: 'https://ezersport.com/images/hero-full-banner.webp',
+  '@id': `${SITE}/#negocio`,
+  name: 'Ezer Sport',
+  alternateName: 'Ezer Sport Confección Textil',
+  description: 'Taller de confección textil en Los Teques: pijamas para niños, uniformes, ropa deportiva, suéteres y monos al detal y al mayor.',
+  url: SITE,
+  logo: `${SITE}/images/ezer-icon-512.png`,
+  image: `${SITE}/images/hero-full-banner.webp`,
   telephone: '+584241282108',
   priceRange: '$ - $$',
   currenciesAccepted: 'USD, VES',
   paymentAccepted: 'Efectivo, Pago Móvil, Binance, Transferencia Bancaria',
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'Taller Central Los Teques',
     addressLocality: 'Los Teques',
     addressRegion: 'Miranda',
     addressCountry: 'VE',
   },
-  geo: {
-    '@type': 'GeoCoordinates',
-    latitude: 10.3444,
-    longitude: -67.0433,
-  },
+  geo: { '@type': 'GeoCoordinates', latitude: 10.3444, longitude: -67.0433 },
   openingHoursSpecification: [
     {
       '@type': 'OpeningHoursSpecification',
@@ -61,113 +69,141 @@ const storeSchema = {
     { '@type': 'City', name: 'San Antonio de los Altos' },
     { '@type': 'Country', name: 'Venezuela' },
   ],
+  sameAs: ['https://instagram.com/ezer_sport'],
 };
 
-// Schema.org FAQ
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {
-      '@type': 'Question',
-      name: '¿Hacen ventas al mayor de pijamas para niños, uniformes y ropa deportiva?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Sí, somos fabricantes directos. Ofrecemos escalas de precio al mayor a partir de 6 piezas surtidas en tallas y colores para tiendas, revendedores y colegios.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: '¿Dónde realizan entregas en Caracas y Miranda?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'En Caracas realizamos entregas presenciales los sábados en Plaza Venezuela frente a la Torre La Previsora. En Los Teques entregamos gratis en las estaciones de Metro Independencia y Alí Primera de lunes a sábado.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: '¿Qué tipo de telas usan para pijamas infantiles y suéteres afelpados?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Utilizamos algodón afelpado perchado antialérgico nacional de alta durabilidad, algodón peinado 24/1 y taslan impermeable con forro transpirable.',
-      },
-    },
-  ],
-};
+const allSchemas = [storeSchema, ...schemas];
+const fontsURL = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap';
 ---
 
 <!doctype html>
-<html lang="es" class="scroll-smooth">
+<html lang="es-VE" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/images/ezer-icon-192.png" />
-    <link rel="canonical" href={canonicalURL} />
-    <meta name="generator" content={Astro.generator} />
-
-    <!-- SEO Meta Tags -->
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="keywords" content={keywords} />
-    <meta name="author" content="Ezer Sport Confección Textil" />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href={canonicalURL} />
+    <meta
+      name="robots"
+      content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1'}
+    />
+    <meta name="theme-color" content="#0c3b74" />
+    <meta name="format-detection" content="telephone=no" />
 
-    <!-- OpenGraph / Facebook / WhatsApp -->
-    <meta property="og:type" content="website" />
+    <!-- Iconos y PWA -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/ezer-icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Open Graph (Facebook / WhatsApp / Instagram) -->
+    <meta property="og:type" content={ogType} />
     <meta property="og:locale" content="es_VE" />
     <meta property="og:site_name" content="Ezer Sport" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={image} />
+    <meta property="og:image" content={absoluteImage} />
+    <meta property="og:image:alt" content={title} />
 
-    <!-- Twitter Card -->
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image" content={absoluteImage} />
 
-    <!-- Performance: Preload Critical Hero LCP Image -->
-    <link
-      rel="preload"
-      as="image"
-      href="/images/hero-familia-taller.webp"
-      type="image/webp"
-      fetchpriority="high"
-    />
-
-    <!-- Google Fonts: Poppins with display=swap (Non-render-blocking) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-      media="print"
-      onload="this.media='all'"
-    />
-    <noscript>
+    <!-- Rendimiento: precarga responsive de la imagen principal (LCP) -->
+    {preloadHero && (
       <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet"
+        rel="preload"
+        as="image"
+        type="image/webp"
+        href="/images/hero-familia-taller.webp"
+        imagesrcset="/images/hero-familia-taller-768.webp 768w, /images/hero-familia-taller.webp 1376w"
+        imagesizes="100vw"
+        fetchpriority="high"
       />
-    </noscript>
-
-    <!-- Structured Data JSON-LD (Rich Snippets for Google) -->
-    <script type="application/ld+json" set:html={JSON.stringify(storeSchema)} />
-    <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
-    {productSchema && (
-      <script type="application/ld+json" set:html={JSON.stringify(productSchema)} />
     )}
 
-    <ClientRouter />
+    <!-- Google Fonts sin bloquear el renderizado -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href={fontsURL} rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href={fontsURL} rel="stylesheet" /></noscript>
+
+    <!-- Datos estructurados (rich snippets de Google) -->
+    {allSchemas.map((schema) => (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    ))}
   </head>
   <body class="bg-[#f8fafc] text-slate-800 min-h-screen flex flex-col selection:bg-[#009fe3] selection:text-white antialiased">
+    <!-- Barra superior indicadora de scroll dinámica -->
+    <div
+      id="scroll-progress"
+      aria-hidden="true"
+      class="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#009fe3] via-[#d0d709] to-[#009fe3] z-50 scale-x-0 transition-transform duration-75 pointer-events-none"
+    ></div>
+
     <slot />
+
+    <!-- Script de scroll reveal y dinamismo fluido (60 FPS) -->
+    <script is:inline>
+      (function() {
+        // 1. Barra de progreso de lectura
+        const progressBar = document.getElementById('scroll-progress');
+        const updateProgress = () => {
+          if (!progressBar) return;
+          const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+          if (totalHeight > 0) {
+            const progress = Math.min(Math.max(window.scrollY / totalHeight, 0), 1);
+            progressBar.style.transform = `scaleX(${progress})`;
+          }
+        };
+
+        window.addEventListener('scroll', updateProgress, { passive: true });
+        updateProgress();
+
+        // 2. Revelado suave de secciones y elementos al hacer scroll
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Asignar delays escalonados a grupos con data-reveal-group
+        document.querySelectorAll('[data-reveal-group]').forEach((group) => {
+          const items = group.querySelectorAll(':scope > [data-reveal]');
+          items.forEach((item, index) => {
+            if (!item.hasAttribute('data-reveal-delay')) {
+              item.style.transitionDelay = `${Math.min(index * 120, 600)}ms`;
+            }
+          });
+        });
+
+        if (prefersReducedMotion) {
+          document.querySelectorAll('[data-reveal]').forEach((el) => {
+            el.classList.add('is-revealed');
+          });
+          return;
+        }
+
+        const revealObserver = new IntersectionObserver(
+          (entries, observer) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          {
+            threshold: 0.12,
+            rootMargin: '0px 0px -50px 0px',
+          }
+        );
+
+        document.querySelectorAll('[data-reveal]').forEach((el) => {
+          revealObserver.observe(el);
+        });
+      })();
+    </script>
   </body>
 </html>

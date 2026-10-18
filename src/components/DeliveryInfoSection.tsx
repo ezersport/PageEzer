@@ -4,6 +4,9 @@ import { MapPin, Truck, Sparkles, CheckCircle2, MessageCircle } from 'lucide-rea
 export const DeliveryInfoSection: React.FC = () => {
   return (
     <section id="entregas" className="relative w-full overflow-hidden bg-slate-950 pt-28 pb-20 sm:pt-36 sm:pb-28 lg:pt-44 lg:pb-36 text-white">
+      {/* Top transition divider with glowing accent */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#009fe3]/70 to-transparent shadow-[0_0_20px_#009fe3] z-10"></div>
+
       {/* Background: Edge-to-edge El Ávila Panoramic View with vibrant lighting */}
       <div
         className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 scale-105"
@@ -17,7 +20,7 @@ export const DeliveryInfoSection: React.FC = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header with generous top spacing and clean modern typography */}
-        <div className="text-center space-y-3 pt-2 sm:pt-4">
+        <div data-reveal="slide-up" className="text-center space-y-3 pt-2 sm:pt-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg">
             <Sparkles className="w-4 h-4 text-[#d0d709]" />
             <span>PUNTOS FIJOS &amp; DESPACHOS DIRECTOS</span>
@@ -32,10 +35,13 @@ export const DeliveryInfoSection: React.FC = () => {
           </p>
         </div>
 
-        {/* Frosted Translucent Cards Grid (mountain visible through the cards, no repeated badges, min 16px font size) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
+        {/* Frosted Translucent Cards Grid with staggered scroll reveal */}
+        <div data-reveal-group className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
           {/* Card 1: Caracas */}
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900"
+          >
             <div className="space-y-4">
               {/* Header Box */}
               <div className="border-b border-slate-200/80 pb-3">
@@ -78,7 +84,10 @@ export const DeliveryInfoSection: React.FC = () => {
           </div>
 
           {/* Card 2: Los Teques */}
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900"
+          >
             <div className="space-y-4">
               {/* Header Box */}
               <div className="border-b border-slate-200/80 pb-3">
@@ -123,7 +132,10 @@ export const DeliveryInfoSection: React.FC = () => {
           </div>
 
           {/* Card 3: San Antonio */}
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900"
+          >
             <div className="space-y-4">
               {/* Header Box */}
               <div className="border-b border-slate-200/80 pb-3">
@@ -172,7 +184,10 @@ export const DeliveryInfoSection: React.FC = () => {
           </div>
 
           {/* Card 4: Envíos Nacionales */}
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.3)] border-2 border-white/90 hover:bg-white/90 hover:shadow-[0_24px_50px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between space-y-5 text-slate-900"
+          >
             <div className="space-y-4">
               {/* Header Box */}
               <div className="border-b border-slate-200/80 pb-3">
@@ -211,7 +226,7 @@ export const DeliveryInfoSection: React.FC = () => {
         </div>
 
         {/* Bottom CTA Strip */}
-        <div className="p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-5 text-slate-900">
+        <div data-reveal="fade-in" className="p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-5 text-slate-900">
           <div className="flex items-center gap-4 text-left">
             <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0c3b74] flex items-center justify-center shrink-0 border border-blue-200 shadow-sm">
               <Truck className="w-7 h-7 text-[#009fe3]" />

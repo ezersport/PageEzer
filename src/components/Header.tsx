@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingBag, Truck, Menu, X, Ruler } from 'lucide-react';
+import { ShoppingBag, Truck, Menu, X, Ruler, Scissors } from 'lucide-react';
 import {
   getCartItems,
   getCurrentRate,
@@ -8,46 +8,74 @@ import {
   formatBs,
   emitEvent,
   getAppConfig,
-  fetchAppConfigFromSupabase,
 } from '../lib/store';
 import type { CartItem, AppConfig } from '../types';
 import { EzLogo } from './EzLogo';
 
+interface NavLink {
+  label: string;
+  mobileLabel: string;
+  href: string;
+  /** Si existe, el enlace abre el catálogo filtrado por esta categoría */
+  category?: string;
+  icon?: React.ReactNode;
+  highlight?: boolean;
+}
+
+// Los enlaces usan "/#..." para que también funcionen desde las fichas de producto.
+const NAV_LINKS: NavLink[] = [
+  { label: 'Catálogo', mobileLabel: 'Catálogo completo', href: '/#catalogo' },
+  { label: 'Niños', mobileLabel: '👶 Ropa infantil (tallas 2 a 14)', href: '/#cat-ninos', category: 'ninos' },
+  { label: 'Pijamas', mobileLabel: '🌙 Pijamas', href: '/#cat-pijamas', category: 'pijamas' },
+  { label: 'Chaquetas', mobileLabel: '🧥 Chaquetas y cortavientos', href: '/#cat-chaquetas', category: 'chaquetas' },
+  {
+    label: '«Mándalo a Hacer»',
+    mobileLabel: '✂️ «¡Mándalo a Hacer!» (personalizados)',
+    href: '/#mandalo-a-hacer',
+    icon: <Scissors className="w-4 h-4 text-amber-500" aria-hidden="true" />,
+    highlight: true,
+  },
+  {
+    label: 'Entregas',
+    mobileLabel: '🛵 Entregas y envíos',
+    href: '/#entregas',
+    icon: <Truck className="w-4 h-4 text-[#009fe3]" aria-hidden="true" />,
+  },
+  {
+    label: 'Medidas',
+    mobileLabel: '📏 Tabla de medidas',
+    href: '/#tabla-de-medidas',
+    icon: <Ruler className="w-4 h-4 text-[#009fe3]" aria-hidden="true" />,
+  },
+];
+
 export const Header: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [currentRate, setCurrentRate] = useState<number>(76.50);
+  const [currentRate, setCurrentRate] = useState<number>(76.5);
+  const [appConfig, setAppConfig] = useState<AppConfig>({ tasa_bcv: 76.5, entregas_caracas_activas: true });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     setCartItems(getCartItems());
     setCurrentRate(getCurrentRate());
+    setAppConfig(getAppConfig());
 
-    // Fetch fresh official rate from Supabase
     fetchCurrentRateFromSupabase().then((rate) => {
       if (rate && rate > 0) setCurrentRate(rate);
     });
 
-    const handleCartUpdate = (e: any) => {
-      setCartItems(e.detail?.items || getCartItems());
-    };
-
-    const handleRateUpdate = (e: any) => {
-      setCurrentRate(e.detail?.currentRate || getCurrentRate());
-    };
-
+    const handleCartUpdate = (e: any) => setCartItems(e.detail?.items || getCartItems());
+    const handleRateUpdate = (e: any) => setCurrentRate(e.detail?.currentRate || getCurrentRate());
     const handleConfigUpdate = (e: any) => {
       if (e.detail?.config) setAppConfig(e.detail.config);
     };
-
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
 
     window.addEventListener('ezer-cart-updated', handleCartUpdate);
     window.addEventListener('ezer-rate-updated', handleRateUpdate);
     window.addEventListener('ezer-config-updated', handleConfigUpdate);
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener('ezer-cart-updated', handleCartUpdate);
@@ -57,199 +85,139 @@ export const Header: React.FC = () => {
     };
   }, []);
 
-  const [appConfig, setAppConfig] = useState<AppConfig>(getAppConfig());
-
   const cartSummary = calculateCartSummary(cartItems, currentRate);
   const totalUnits = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  /** En la home filtra el catálogo sin recargar; en otras páginas navega normal. */
+  const handleNavClick = (link: NavLink) => (e: React.MouseEvent) => {
+    setMobileMenuOpen(false);
+    if (link.category && window.location.pathname === '/') {
+      e.preventDefault();
+      history.replaceState(null, '', `#cat-${link.category}`);
+      emitEvent('ezer-filter-category', { category: link.category });
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full transition-all duration-300">
-      {/* Top Announcement Bar Dinámico */}
-      <div className="bg-[#0c3b74] text-white text-xs sm:text-sm py-2 px-4 font-normal tracking-wide">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap text-ellipsis mx-auto sm:mx-0">
+    <header className="sticky top-0 z-40 w-full">
+      {/* Barra de anuncios */}
+      <div className="bg-[#0c3b74] text-white text-xs sm:text-sm py-2 px-4 tracking-wide">
+        <div className="max-w-7xl mx-auto flex items-center justify-center lg:justify-between gap-2">
+          <p className="flex items-center gap-2 min-w-0 truncate">
             {appConfig.entregas_caracas_activas ? (
               <>
-                <span className="flex h-2 w-2 rounded-full bg-[#d0d709] animate-pulse shrink-0"></span>
-                <span className="font-semibold text-[#d0d709]">¡Entregas los Sábados!</span>
-                <span className="text-blue-200 hidden sm:inline">•</span>
-                <span className="text-blue-100">
-                  Caracas: <strong className="text-white">Plaza Venezuela</strong> • <strong className="text-white">Los Teques y San Antonio</strong> con delivery
+                <span className="flex h-2 w-2 rounded-full bg-[#d0d709] animate-pulse shrink-0" />
+                <span className="font-semibold text-[#d0d709] shrink-0">¡Entregas los sábados!</span>
+                <span className="text-blue-100 truncate">
+                  Caracas: <strong className="text-white">Plaza Venezuela</strong>
+                  <span className="hidden sm:inline">
+                    {' '}• <strong className="text-white">Los Teques y San Antonio</strong> con delivery
+                  </span>
                 </span>
               </>
             ) : (
               <>
-                <span className="flex h-2 w-2 rounded-full bg-rose-400 shrink-0"></span>
-                <span className="font-bold text-rose-300">⚠️ Entregas Caracas en pausa esta semana</span>
-                <span className="text-blue-200 hidden sm:inline">•</span>
-                <span className="text-blue-100">
-                  Activo delivery en <strong className="text-white">Los Teques y San Antonio</strong>
+                <span className="flex h-2 w-2 rounded-full bg-rose-400 shrink-0" />
+                <span className="font-bold text-rose-300 shrink-0">Entregas en Caracas en pausa</span>
+                <span className="text-blue-100 truncate hidden sm:inline">
+                  • Delivery activo en <strong className="text-white">Los Teques y San Antonio</strong>
                 </span>
               </>
             )}
-          </div>
+          </p>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-blue-100 font-medium shrink-0">
-            <Truck className="w-3.5 h-3.5 text-[#d0d709]" />
+          <p className="hidden lg:flex items-center gap-2 text-xs text-blue-100 font-medium shrink-0">
+            <Truck className="w-3.5 h-3.5 text-[#d0d709]" aria-hidden="true" />
             <span>Envíos a toda Venezuela (MRW, Zoom, Tealca)</span>
-          </div>
+          </p>
         </div>
       </div>
 
-      {/* Main Navbar: Clean & Luminous Light Design */}
+      {/* Navegación principal */}
       <nav
-        className={`w-full transition-all duration-200 ${
+        aria-label="Navegación principal"
+        className={`w-full transition-colors duration-200 ${
           isScrolled
             ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200'
             : 'bg-white border-b border-slate-100'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          {/* Brand Logo & Name */}
-          <a href="/" className="flex items-center group">
-            <EzLogo className="w-12 h-10" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+          <a href="/" className="flex items-center group shrink-0" aria-label="Ezer Sport - Inicio">
+            <EzLogo className="w-11 h-9 sm:w-12 sm:h-10" />
           </a>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-6 lg:gap-8">
-            <a
-              href="#catalogo"
-              className="text-sm lg:text-base font-medium text-slate-700 hover:text-[#009fe3] transition-colors"
-            >
-              Catálogo
-            </a>
-            <a
-              href="#catalogo"
-              className="text-sm lg:text-base font-medium text-slate-700 hover:text-[#009fe3] transition-colors flex items-center gap-1.5"
-            >
-              Niños
-              <span className="text-[11px] bg-blue-50 text-[#009fe3] px-2 py-0.5 rounded-full font-bold border border-blue-100">
-                1 a 10
-              </span>
-            </a>
-            <a
-              href="#catalogo"
-              className="text-sm lg:text-base font-medium text-slate-700 hover:text-[#009fe3] transition-colors"
-            >
-              Chaquetas
-            </a>
-            <a
-              href="#catalogo"
-              className="text-sm lg:text-base font-medium text-slate-700 hover:text-[#009fe3] transition-colors"
-            >
-              Pijamas
-            </a>
-            <a
-              href="#mandalo-a-hacer"
-              className="text-sm lg:text-base font-semibold text-[#0c3b74] hover:text-[#009fe3] transition-colors flex items-center gap-1"
-            >
-              <span className="text-amber-500 font-bold">✂️</span>
-              <span>«Mándalo a Hacer»</span>
-            </a>
-            <a
-              href="#entregas"
-              className="text-sm lg:text-base font-medium text-slate-700 hover:text-[#009fe3] transition-colors flex items-center gap-1.5"
-            >
-              <Truck className="w-4 h-4 text-[#009fe3]" />
-              <span>Entregas</span>
-            </a>
-            <a
-              href="#tabla-de-medidas"
-              className="text-sm lg:text-base font-medium text-slate-700 hover:text-[#009fe3] transition-colors flex items-center gap-1.5"
-            >
-              <Ruler className="w-4 h-4 text-[#009fe3]" />
-              <span>Medidas</span>
-            </a>
-          </div>
+          {/* Escritorio: solo desde 1024px para que los 7 enlaces no se amontonen en tablets */}
+          <ul className="hidden lg:flex items-center gap-5 xl:gap-7">
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  onClick={handleNavClick(link)}
+                  className={`text-sm xl:text-base transition-colors hover:text-[#009fe3] flex items-center gap-1.5 whitespace-nowrap ${
+                    link.highlight ? 'font-semibold text-[#0c3b74]' : 'font-medium text-slate-700'
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
 
-          {/* Cart Trigger Button & Mobile Hamburger */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
+              type="button"
               onClick={() => emitEvent('ezer-open-cart')}
-              className="relative flex items-center gap-3 bg-[#0c3b74] hover:bg-[#092d59] text-white px-4 py-2.5 rounded-2xl text-sm font-medium transition-all shadow-sm active:scale-95"
-              aria-label="Ver Carrito de Compras"
+              className="relative flex items-center gap-3 bg-[#0c3b74] hover:bg-[#092d59] text-white px-3.5 sm:px-4 py-2.5 rounded-2xl text-sm font-medium transition-all shadow-sm active:scale-95"
+              aria-label={totalUnits > 0 ? `Ver carrito (${totalUnits} prendas)` : 'Ver carrito de compras'}
             >
-              <div className="relative">
-                <ShoppingBag className="w-5 h-5 text-[#d0d709]" />
+              <span className="relative">
+                <ShoppingBag className="w-5 h-5 text-[#d0d709]" aria-hidden="true" />
                 {totalUnits > 0 && (
                   <span className="absolute -top-2 -right-2 bg-[#d0d709] text-slate-900 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow">
                     {totalUnits}
                   </span>
                 )}
-              </div>
-              <span className="hidden sm:inline">
-                {totalUnits > 0 ? (
-                  <span className="font-semibold">{formatBs(cartSummary.subtotalBs)}</span>
-                ) : (
-                  <span>Mi Carrito</span>
-                )}
+              </span>
+              <span className="hidden sm:inline font-semibold">
+                {totalUnits > 0 ? formatBs(cartSummary.subtotalBs) : 'Mi carrito'}
               </span>
             </button>
 
-            {/* Mobile menu toggle */}
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200"
-              aria-label="Abrir menú"
+              className="lg:hidden p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200"
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="menu-movil"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Menú móvil / tablet */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-3 shadow-lg">
-            <a
-              href="#catalogo"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-800 hover:text-[#009fe3]"
-            >
-              Catálogo Completo
-            </a>
-            <a
-              href="#catalogo"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-800 hover:text-[#009fe3]"
-            >
-              👶 Línea Infantil (Mickey GAP, Dino, Jirafita)
-            </a>
-            <a
-              href="#catalogo"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-800 hover:text-[#009fe3]"
-            >
-              🧥 Chaquetas Cortavientos & Hoodies
-            </a>
-            <a
-              href="#catalogo"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-800 hover:text-[#009fe3]"
-            >
-              🌙 Pijamas Familiares a Juego
-            </a>
-            <a
-              href="#mandalo-a-hacer"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-semibold text-[#0c3b74]"
-            >
-              ✂️ «¡Mándalo a Hacer!» (Personalizados & DTF)
-            </a>
-            <a
-              href="#entregas"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-slate-800 hover:text-[#009fe3]"
-            >
-              🛵 Entregas (Plaza Venezuela, Los Teques, San Antonio)
-            </a>
-            <a
-              href="#tabla-de-medidas"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-[#009fe3] font-semibold"
-            >
-              📏 Tabla de Medidas & Tallas (Guía en cm)
-            </a>
-          </div>
+          <ul
+            id="menu-movil"
+            className="lg:hidden bg-white border-t border-slate-100 px-4 py-3 shadow-lg max-h-[calc(100svh-7rem)] overflow-y-auto"
+          >
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  onClick={handleNavClick(link)}
+                  className={`block py-3 text-base border-b border-slate-100 last:border-0 hover:text-[#009fe3] ${
+                    link.highlight ? 'font-semibold text-[#0c3b74]' : 'font-medium text-slate-800'
+                  }`}
+                >
+                  {link.mobileLabel}
+                </a>
+              </li>
+            ))}
+          </ul>
         )}
       </nav>
     </header>

@@ -28,3 +28,6 @@ ezer-admin/
 
 # jetbrains setting folder
 .idea/
+
+# Skills locales del agente (no forman parte de la web)
+.agents/

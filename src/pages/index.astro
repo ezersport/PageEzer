@@ -8,28 +8,46 @@ import { CatalogSection } from '../components/CatalogSection';
 import { CustomOrderSection } from '../components/CustomOrderSection';
 import { AboutWorkshopSection } from '../components/AboutWorkshopSection';
 import { DeliveryInfoSection } from '../components/DeliveryInfoSection';
-import { FAQSection } from '../components/FAQSection';
+import { FAQSection, faqs } from '../components/FAQSection';
 import { SizeGuideSection } from '../components/SizeGuideSection';
 import { Footer } from '../components/Footer';
 import { FloatingWhatsApp } from '../components/FloatingWhatsApp';
 import { SizeGuideModal } from '../components/SizeGuideModal';
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Ezer Sport',
+  url: 'https://ezersport.com',
+  inLanguage: 'es-VE',
+  publisher: { '@id': 'https://ezersport.com/#negocio' },
+};
+
+// Generado desde las mismas preguntas visibles en la sección FAQ
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.question,
+    acceptedAnswer: { '@type': 'Answer', text: f.answer },
+  })),
+};
 ---
 
 <Layout
-  title="Ezer Sport | Pijamas para Niños, Uniformes, Ropa Deportiva, Suéteres y Monos al Mayor"
-  description="Taller de confección textil venezolano en Los Teques. Pijamas térmicas para niños, uniformes escolares y deportivos, suéteres hoodies afelpados, monos joggers y franelas al detal y mayorista. Entregas en Caracas (Plaza Venezuela) y envíos nacionales."
+  title="Ezer Sport | Pijamas para Niños, Uniformes, Ropa Deportiva y Suéteres al Mayor"
+  description="Taller de confección en Los Teques. Pijamas para niños, uniformes escolares y deportivos, suéteres, monos y franelas al detal y al mayor desde 6 piezas. Entregas en Caracas y envíos a toda Venezuela."
+  preloadHero
+  schemas={[websiteSchema, faqSchema]}
 >
   <Header client:load />
-  <main class="flex-1">
-    <!-- Interactive & Animated Hero -->
-    <FullWidthHero client:load />
-    <PromoBanners />
-    <BigCategoryBanners client:visible />
-
-    <!-- Interactive Island: Catalog with live filters, variants and cart -->
+  <main id="contenido" class="flex-1">
+    <!-- HTML estático: el hero no necesita JavaScript y pinta al instante (mejor LCP) -->
+    <FullWidthHero />
+    <BigCategoryBanners />
     <CatalogSection client:load />
-
-    <!-- Interactive Informational, Delivery & FAQ Islands -->
+    <PromoBanners />
     <CustomOrderSection client:visible />
     <AboutWorkshopSection />
     <DeliveryInfoSection client:visible />

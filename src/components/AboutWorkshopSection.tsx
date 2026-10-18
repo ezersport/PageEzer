@@ -7,12 +7,12 @@ export const AboutWorkshopSection: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Image & Guarantee badge */}
-          <div className="lg:col-span-6 relative">
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white aspect-[4/3]">
+          <div data-reveal="slide-right" className="lg:col-span-6 relative">
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white aspect-[4/3] group">
               <img
                 src="/images/historia-taller-familiar.webp"
                 alt="Taller textil venezolano Ezer Sport en Los Teques - Confección familiar y dedicación"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 loading="lazy"
                 decoding="async"
                 width="800"
@@ -47,7 +47,7 @@ export const AboutWorkshopSection: React.FC = () => {
           </div>
 
           {/* Narrative Content */}
-          <div className="lg:col-span-6 space-y-6">
+          <div data-reveal="slide-left" className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 text-[#0c3b74] text-xs sm:text-sm font-semibold border border-blue-100">
               <HeartHandshake className="w-4 h-4 text-[#009fe3]" />
               <span>Nuestra Historia & Compromiso</span>

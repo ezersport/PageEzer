@@ -97,11 +97,11 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 .animate-fadeInUp {
-  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-fadeInScale {
-  animation: fadeInScale 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInScale 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-floatGentle {
@@ -121,4 +121,83 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 .accordion-content-inner {
   overflow: hidden;
+}
+
+/* Carruseles horizontales sin barra visible (pestañas de categorías) */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Compensa el header fijo al saltar a una sección con #ancla */
+section[id] {
+  scroll-margin-top: 7rem;
+}
+
+/* ==========================================================================
+   SCROLL REVEAL & DYNAMIC SECTION TRANSITIONS (GSAP & AOS inspired)
+   ========================================================================== */
+
+/* Barra de progreso de lectura / scroll en el tope */
+#scroll-progress {
+  transform-origin: 0% 50%;
+  will-change: transform;
+}
+
+/* Estados iniciales de elementos revelados al hacer scroll */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+[data-reveal="fade-in"] {
+  transform: translateY(0);
+}
+
+[data-reveal="zoom-in"] {
+  transform: scale(0.92) translateY(24px);
+}
+
+[data-reveal="slide-up"] {
+  transform: translateY(40px);
+}
+
+[data-reveal="slide-right"] {
+  transform: translateX(-36px);
+}
+
+[data-reveal="slide-left"] {
+  transform: translateX(36px);
+}
+
+/* Estado activo cuando entra en el viewport */
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
+}
+
+/* Transición suave para divisores entre secciones */
+.section-divider-glow {
+  height: 2px;
+  background: radial-gradient(circle, rgba(0, 159, 227, 0.6) 0%, rgba(208, 215, 9, 0.3) 50%, transparent 100%);
+  filter: blur(1px);
+}
+
+/* Accesibilidad: sin animaciones para quien lo pida en su sistema */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -9,9 +9,12 @@ export const PromoBanners: React.FC = () => {
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div data-reveal-group className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Banner 1: Promo Lanzamiento / Temporada */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0c3b74] via-[#092d59] to-slate-950 p-8 sm:p-10 text-white shadow-xl border border-blue-900/40 flex flex-col justify-between">
+        <div
+          data-reveal="slide-up"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0c3b74] via-[#092d59] to-slate-950 p-8 sm:p-10 text-white shadow-xl border border-blue-900/40 flex flex-col justify-between"
+        >
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-[#009fe3]/20 rounded-full blur-3xl pointer-events-none"></div>
           
           <div className="space-y-4">
@@ -41,7 +44,10 @@ export const PromoBanners: React.FC = () => {
         </div>
 
         {/* Banner 2: Ventas al Mayor */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#1e293b] to-slate-950 p-8 sm:p-10 text-white shadow-xl border border-slate-700/60 flex flex-col justify-between">
+        <div
+          data-reveal="slide-up"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#1e293b] to-slate-950 p-8 sm:p-10 text-white shadow-xl border border-slate-700/60 flex flex-col justify-between"
+        >
           <div className="absolute -right-10 -top-10 w-48 h-48 bg-[#d0d709]/15 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="space-y-4">

@@ -63,7 +63,8 @@ const productSchema = product ? {
   offers: {
     '@type': 'Offer',
     url: `https://ezersport.com/producto/${product.slug}`,
-    priceCurrency: 'VED',
+    priceCurrency: 'USD',
+    price: product.basePriceUSD || 0,
     availability: 'https://schema.org/InStock',
     seller: {
       '@type': 'Organization',
@@ -79,17 +80,18 @@ const productSchema = product ? {
     description={product.description}
     image={product.images[0]}
     keywords={`${product.name}, confeccion venezuela, ropa infantil, uniformes, sueteres, pijamas niños, ezer sport`}
-    productSchema={productSchema}
+    ogType="product"
+    schemas={productSchema ? [productSchema] : []}
   >
     <Header client:load />
     <main class="flex-1 bg-[#f8fafc]">
       <!-- Breadcrumb for SEO -->
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <nav class="flex text-xs sm:text-sm text-slate-500 gap-2 items-center">
+        <nav aria-label="Migas de pan" class="flex text-xs sm:text-sm text-slate-500 gap-2 items-center">
           <a href="/" class="hover:text-[#009fe3] transition-colors">Inicio</a>
-          <span>/</span>
+          <span aria-hidden="true">/</span>
           <a href="/#catalogo" class="hover:text-[#009fe3] transition-colors">Catálogo</a>
-          <span>/</span>
+          <span aria-hidden="true">/</span>
           <span class="text-slate-800 font-medium truncate">{product.name}</span>
         </nav>
       </div>
@@ -104,6 +106,7 @@ const productSchema = product ? {
   <Layout
     title="Prenda no encontrada | Ezer Sport"
     description="No se encontró la prenda seleccionada en nuestro catálogo."
+    noindex={true}
   >
     <Header client:load />
     <main class="flex-1 bg-[#f8fafc] py-24 flex items-center justify-center">
@@ -128,4 +131,3 @@ const productSchema = product ? {
     <Footer />
   </Layout>
 )}
-

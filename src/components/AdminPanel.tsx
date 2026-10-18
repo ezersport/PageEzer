@@ -60,7 +60,7 @@ export const AdminPanel: React.FC = () => {
   const [newProductCategory, setNewProductCategory] = useState<CategoryType>('ninos');
   const [newProductVariantType, setNewProductVariantType] = useState<VariantType>('print');
   const [newProductDescription, setNewProductDescription] = useState('');
-  const [newProductImage, setNewProductImage] = useState('/images/kids-sweaters.jpg');
+  const [newProductImage, setNewProductImage] = useState('/images/kids-sweaters.webp');
   const [newProductBasePrice, setNewProductBasePrice] = useState('10.00');
   const [newProductTier3, setNewProductTier3] = useState('8.50');
   const [newProductTier6, setNewProductTier6] = useState('7.50');
@@ -141,7 +141,7 @@ export const AdminPanel: React.FC = () => {
       tier3PriceUSD: newProductTier3 ? parseFloat(newProductTier3) : undefined,
       tier6PriceUSD: newProductTier6 ? parseFloat(newProductTier6) : undefined,
       tier12PriceUSD: newProductTier12 ? parseFloat(newProductTier12) : undefined,
-      images: [newProductImage || '/images/kids-sweaters.jpg'],
+      images: [newProductImage || '/images/kids-sweaters.webp'],
       variants: generatedVariants,
       availability: newProductAvailability,
       isActive: true,
@@ -202,7 +202,7 @@ export const AdminPanel: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden border border-[#009fe3]">
-                <img src="/images/ezer-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+                <img src="/images/ezer-logo.webp" alt="Logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h1 className="font-display font-black text-xl text-white">
@@ -1000,7 +1000,7 @@ export const AdminPanel: React.FC = () => {
                       <tr key={p.id} className="hover:bg-[#131518]/50">
                         <td className="p-3 flex items-center gap-3">
                           <img
-                            src={p.images[0] || '/images/kids-sweaters.jpg'}
+                            src={p.images[0] || '/images/kids-sweaters.webp'}
                             alt={p.name}
                             className="w-10 h-10 rounded-lg object-cover bg-[#131518]"
                           />

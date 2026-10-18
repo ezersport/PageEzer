@@ -15,13 +15,16 @@ export const CustomOrderSection: React.FC = () => {
 
   return (
     <section id="mandalo-a-hacer" className="py-20 bg-slate-900 text-white relative overflow-hidden">
+      {/* Top section divider with glowing accent */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#009fe3]/60 to-transparent shadow-[0_0_15px_#009fe3]"></div>
+
       {/* Background glow decorations */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#009fe3]/15 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-[#d0d709]/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
+        <div data-reveal="slide-up" className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-[#009fe3] text-xs sm:text-sm font-semibold uppercase tracking-wider">
             <Scissors className="w-4 h-4 text-[#d0d709]" />
             <span>Servicio Exclusivo de Taller Textil</span>
@@ -41,9 +44,12 @@ export const CustomOrderSection: React.FC = () => {
         </div>
 
         {/* 3 Step Process Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div data-reveal-group className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           {/* Step 1 */}
-          <div className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 hover:border-[#009fe3]/50 transition-all duration-300 flex flex-col justify-between space-y-6">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 hover:border-[#009fe3]/50 transition-all duration-300 flex flex-col justify-between space-y-6 hover:-translate-y-1 hover:shadow-xl"
+          >
             <div className="space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-[#0c3b74] text-[#009fe3] border border-blue-500/30 flex items-center justify-center font-display font-black text-2xl">
                 1
@@ -62,7 +68,10 @@ export const CustomOrderSection: React.FC = () => {
           </div>
 
           {/* Step 2 */}
-          <div className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 hover:border-[#009fe3]/50 transition-all duration-300 flex flex-col justify-between space-y-6">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 hover:border-[#009fe3]/50 transition-all duration-300 flex flex-col justify-between space-y-6 hover:-translate-y-1 hover:shadow-xl"
+          >
             <div className="space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-[#0c3b74] text-[#d0d709] border border-yellow-500/30 flex items-center justify-center font-display font-black text-2xl">
                 2
@@ -81,7 +90,10 @@ export const CustomOrderSection: React.FC = () => {
           </div>
 
           {/* Step 3 */}
-          <div className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 hover:border-[#009fe3]/50 transition-all duration-300 flex flex-col justify-between space-y-6">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 hover:border-[#009fe3]/50 transition-all duration-300 flex flex-col justify-between space-y-6 hover:-translate-y-1 hover:shadow-xl"
+          >
             <div className="space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-[#0c3b74] text-white border border-blue-400/30 flex items-center justify-center font-display font-black text-2xl">
                 3
@@ -101,7 +113,7 @@ export const CustomOrderSection: React.FC = () => {
         </div>
 
         {/* Call to Action CTA */}
-        <div className="text-center pt-4">
+        <div data-reveal="fade-in" className="text-center pt-4">
           <a
             href="https://wa.me/584241282108?text=%C2%A1Hola%20Ezer%20Sport!%20%E2%9C%82%EF%B8%8F%20Quiero%20confeccionar%20un%20pedido%20especial%20%C2%AB%C2%A1M%C3%A1ndalo%20a%20Hacer!%C2%BB%20directo%20de%20taller"
             target="_blank"

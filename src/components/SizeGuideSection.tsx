@@ -15,7 +15,7 @@ export const SizeGuideSection: React.FC = () => {
     <section id="tabla-de-medidas" className="py-20 bg-gradient-to-b from-white via-sky-50/40 to-white border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
+        <div data-reveal="slide-up" className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-[#0c3b74] text-xs sm:text-sm font-semibold border border-blue-100 shadow-sm">
             <Ruler className="w-4 h-4 text-[#009fe3]" />
             <span>Guía de Confección en Centímetros (cm)</span>
@@ -35,9 +35,12 @@ export const SizeGuideSection: React.FC = () => {
         </div>
 
         {/* Visual Measurement Cards with real photos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div data-reveal-group className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {/* Visual Card 1: Suéteres y Monos Niños */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5"
+          >
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100">
               <img
                 src="/images/conjunto-infantil-podcast.webp"
@@ -75,7 +78,10 @@ export const SizeGuideSection: React.FC = () => {
           </div>
 
           {/* Visual Card 2: Chaquetas Cortavientos */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5"
+          >
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100">
               <img
                 src="/images/chaqueta-cortavientos.webp"
@@ -113,7 +119,10 @@ export const SizeGuideSection: React.FC = () => {
           </div>
 
           {/* Visual Card 3: Pijamas y Prendas Frescas */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5">
+          <div
+            data-reveal="zoom-in"
+            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg hover:shadow-xl transition-all flex flex-col space-y-5"
+          >
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100">
               <img
                 src="/images/pijama-ninos-mickey.webp"

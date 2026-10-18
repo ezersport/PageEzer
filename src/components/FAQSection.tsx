@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, HelpCircle, Sparkles } from 'lucide-react';
+import { ChevronDown, HelpCircle } from 'lucide-react';
 
-interface FAQItem {
+export interface FAQItem {
   question: string;
   answer: string;
 }
 
-const faqs: FAQItem[] = [
+/** Fuente única: se usa en el acordeón y en el schema FAQPage de la home. */
+export const faqs: FAQItem[] = [
   {
     question: '¿Hacen ventas al mayor y a partir de cuántas piezas?',
     answer:
