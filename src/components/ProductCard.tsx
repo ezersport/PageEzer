@@ -59,6 +59,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, currentRate, 
             </span>
           )}
 
+          {product.canvaEmbedUrl && (
+            <span className="bg-gradient-to-r from-red-600 to-amber-600 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+              <span>✨ 100+ Fotos Canva</span>
+            </span>
+          )}
+
+          {product.category === 'navidad' && !product.badge && (
+            <span className="bg-red-700 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+              <span>🎄 Navidad</span>
+            </span>
+          )}
+
           {product.availability === 'inmediato' ? (
             <span className="bg-emerald-600/90 backdrop-blur-md text-white text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>

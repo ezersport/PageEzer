@@ -8,6 +8,7 @@ import {
 } from '../lib/store';
 import { CartDrawer } from './CartDrawer';
 import { CheckoutModal } from './CheckoutModal';
+import { CanvaViewer } from './CanvaViewer';
 import {
   ArrowLeft,
   Check,
@@ -217,6 +218,16 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               )}
             </div>
           </div>
+
+          {/* Visor Interactivo de Canva (Si la prenda tiene catálogo de fotos vinculado) */}
+          {product.canvaEmbedUrl && (
+            <div className="pt-2">
+              <CanvaViewer
+                url={product.canvaEmbedUrl}
+                title={`Catálogo de Fotos y Modelos: ${product.name}`}
+              />
+            </div>
+          )}
         </div>
 
         {/* Purchase form */}

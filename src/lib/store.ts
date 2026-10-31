@@ -31,6 +31,31 @@ export function emitEvent(eventName: string, detail?: any) {
   }
 }
 
+// Normalizador universal de enlaces de Canva a visor interactivo embed
+export function extractCanvaEmbedUrl(input?: string | null): string | undefined {
+  if (!input || typeof input !== 'string') return undefined;
+  const trimmed = input.trim();
+  if (!trimmed) return undefined;
+
+  // Si pegó un <iframe> o código HTML de Canva
+  const srcMatch = trimmed.match(/src=["'](https:\/\/[^"']+\.canva\.com\/[^"']+)["']/i);
+  let url = srcMatch ? srcMatch[1] : trimmed;
+
+  if (url.includes('canva.com/design/')) {
+    if (url.includes('/view?embed')) {
+      return url;
+    }
+    const base = url.split('?')[0];
+    if (base.endsWith('/view') || base.endsWith('/watch') || base.endsWith('/edit')) {
+      const cleanBase = base.substring(0, base.lastIndexOf('/'));
+      return `${cleanBase}/view?embed`;
+    }
+    return `${base}/view?embed`;
+  }
+
+  return url.startsWith('http') ? url : undefined;
+}
+
 // Normalizador universal y defensivo de productos (Soporta productos sin variantes creados en ezer-admin)
 export function normalizeProduct(p: any): Product {
   const images = (Array.isArray(p.images) && p.images.length > 0)
@@ -70,6 +95,13 @@ export function normalizeProduct(p: any): Product {
     },
   ];
 
+  const rawCanvaUrl = p.canvaEmbedUrl || p.canva_embed_url || (
+    Array.isArray(p.imagenes_galeria)
+      ? p.imagenes_galeria.find((img: any) => typeof img === 'string' && img.startsWith('canva:'))?.replace('canva:', '')
+      : undefined
+  );
+  const canvaEmbedUrl = extractCanvaEmbedUrl(rawCanvaUrl);
+
   return {
     id: String(p.id || `prod-${Date.now()}`),
     name: String(p.name || p.nombre || 'Prenda de Confección'),
@@ -86,8 +118,10 @@ export function normalizeProduct(p: any): Product {
     tier12PriceUSD: Number(p.tier12PriceUSD ?? 0),
     images: images.length > 0 ? images : ['/images/conjunto-ninos-mickey.webp'],
     variants: safeVariants,
+    canvaEmbedUrl,
+    canva_embed_url: canvaEmbedUrl,
     isFeatured: Boolean(p.isFeatured ?? p.destacado),
-    badge: p.badge || (p.destacado ? 'DESTACADO ⭐' : undefined),
+    badge: p.badge || (p.destacado ? 'DESTACADO ⭐' : (canvaEmbedUrl ? '✨ CATÁLOGO 100+ FOTOS' : undefined)),
     isActive: p.isActive !== undefined ? Boolean(p.isActive) : (p.activo !== undefined ? Boolean(p.activo) : true),
   };
 }

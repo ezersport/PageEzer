@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Product, ProductVariant } from '../types';
 import { addToCart, formatBs, emitEvent } from '../lib/store';
+import { CanvaViewer } from './CanvaViewer';
 import { X, Plus, Minus, Check, ShoppingBag, Flame, Sparkles, Clock, Info, Ruler } from 'lucide-react';
 
 interface ProductModalProps {
@@ -221,6 +222,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
               </div>
             </div>
           </div>
+
+          {/* Visor Interactivo de Canva (Si la prenda tiene catálogo de fotos vinculado) */}
+          {product.canvaEmbedUrl && (
+            <div className="pt-2 border-t border-slate-100">
+              <CanvaViewer
+                url={product.canvaEmbedUrl}
+                title={`Catálogo de Fotos y Modelos: ${product.name}`}
+              />
+            </div>
+          )}
 
           {/* Selector 1: Color de la Prenda */}
           <div className="space-y-2 pt-2 border-t border-slate-100">

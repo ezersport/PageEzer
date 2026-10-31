@@ -1,4 +1,4 @@
-export type CategoryType = 'ninos' | 'chaquetas' | 'pijamas' | 'casual' | 'combos' | 'damas' | 'caballeros' | string;
+export type CategoryType = 'navidad' | 'ninos' | 'chaquetas' | 'pijamas' | 'casual' | 'combos' | 'damas' | 'caballeros' | string;
 
 export interface Category {
   id: string;
@@ -48,6 +48,8 @@ export interface Product {
   tier12PriceUSD?: number; // 12 unidades (Docena)
   images: string[];
   variants: ProductVariant[];
+  canvaEmbedUrl?: string;
+  canva_embed_url?: string;
   isFeatured?: boolean;
   badge?: string;
   isActive: boolean;

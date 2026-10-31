@@ -14,6 +14,15 @@ interface CategoryItem {
 // Los enlaces "#cat-<slug>" abren el catálogo ya filtrado por esa categoría.
 const categories: CategoryItem[] = [
   {
+    id: 'navidad',
+    title: 'Colección Navidad 🎄',
+    subtitle: 'Catálogos con más de 100 fotos y estampados navideños',
+    badge: 'Temporada Festiva',
+    image: '/images/conjunto-ninos-mickey.webp',
+    alt: 'Colección de ropa navideña y pijamas confeccionadas en Venezuela',
+    link: '/#cat-navidad',
+  },
+  {
     id: 'pijamas',
     title: 'Pijamas',
     subtitle: 'Pijamas de algodón para el descanso de los pequeños',
