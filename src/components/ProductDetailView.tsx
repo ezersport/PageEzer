@@ -15,6 +15,8 @@ import {
   Plus,
   Minus,
   ShoppingBag,
+  ShoppingCart,
+  Zap,
   Clock,
   Sparkles,
   Flame,
@@ -449,155 +451,205 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             </div>
           </div>
 
-          {/* Pricing Table / Presentaciones Especiales */}
+          {/* Presentaciones Especiales (Diseño de la Captura) / Pricing Table Tradicional */}
           {Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0 ? (
-            <div className="p-5 rounded-3xl bg-blue-50/50 border border-blue-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-900">
-                <div className="flex items-center gap-2 text-[#0c3b74]">
-                  <Flame className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Elige tu Presentación o Paquete por Volumen:</span>
-                </div>
-                <span className="text-[#009fe3] text-xs font-bold">{activeTier}</span>
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-black text-slate-900 text-lg sm:text-xl">
+                  Elige tu presentación:
+                </h3>
+                <span className="bg-purple-100 text-purple-900 text-xs font-bold px-3 py-1 rounded-full">
+                  {product.escalas_precio.length} opciones
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+              {/* Grid 2 Columnas de Tarjetas de Presentación */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {product.escalas_precio.map((tier) => {
                   const isSelected = quantity === tier.cantidad;
+                  const priceBs = tier.precio_total_usd * (currentRate || 76.50);
+
                   return (
                     <button
                       key={tier.id}
                       type="button"
                       onClick={() => setQuantity(tier.cantidad)}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`p-4 sm:p-5 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? 'border-[#009fe3] bg-white ring-2 ring-[#009fe3]/30 shadow-md scale-[1.02]'
-                          : 'border-slate-200 hover:border-slate-300 bg-white/80'
+                          ? 'border-[#581c87] bg-purple-50/25 shadow-md ring-2 ring-[#581c87]/15'
+                          : 'border-slate-200 hover:border-slate-300 bg-white shadow-xs'
                       }`}
                     >
-                      <span className="text-xs font-bold text-slate-900 block truncate">
-                        {tier.nombre}
-                      </span>
-                      <div className="mt-1 flex items-baseline justify-between gap-1">
-                        <span className="text-base font-black text-[#0c3b74]">
-                          ${tier.precio_total_usd.toFixed(2)}
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={`font-display font-black text-base sm:text-lg leading-snug ${
+                            isSelected ? 'text-[#581c87]' : 'text-slate-900'
+                          }`}
+                        >
+                          {tier.nombre}
                         </span>
-                        {tier.cantidad > 1 && (
-                          <span className="text-[11px] text-slate-500 font-medium">
-                            ${(tier.precio_total_usd / tier.cantidad).toFixed(2)} c/u
-                          </span>
-                        )}
+                        {/* Radio Button */}
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? 'border-[#581c87]' : 'border-slate-300'
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#581c87]" />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-dashed border-slate-200/80 my-3" />
+
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span
+                          className={`font-display font-black text-lg sm:text-xl ${
+                            isSelected ? 'text-[#581c87]' : 'text-slate-900'
+                          }`}
+                        >
+                          {formatBs(priceBs)}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">
+                          ${tier.precio_total_usd.toFixed(2)} USD
+                        </span>
                       </div>
                     </button>
                   );
                 })}
               </div>
+
+              {/* Botones de Acción Estilo Púrpura (Exacto a la captura) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3">
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={!selectedVariant}
+                  className="w-full py-4 px-6 rounded-full font-display font-black text-base sm:text-lg bg-[#581c87] hover:bg-[#4a1570] text-white flex items-center justify-center gap-2.5 shadow-lg shadow-purple-950/20 active:scale-95 transition-all cursor-pointer"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>{addedAnimation ? '¡Agregado al Carrito!' : 'Agregar al Carrito'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDirectWhatsApp}
+                  disabled={!selectedVariant}
+                  className="w-full py-4 px-6 rounded-full font-display font-black text-base sm:text-lg bg-white hover:bg-purple-50 text-[#581c87] border-2 border-[#581c87] flex items-center justify-center gap-2.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+                >
+                  <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  <span>Pedir Directamente</span>
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-900">
-                <Flame className="w-4 h-4 text-amber-500" />
-                <span>Escala de Precios al Mayor para este modelo:</span>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm">
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="block text-slate-400 text-xs">1 Unidad</span>
-                  <span className="font-bold text-slate-900 block mt-0.5">{formatBs((product.basePriceUSD || 0) * currentRate)}</span>
-                  <span className="text-[11px] text-slate-500">Detal</span>
+            <>
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-900">
+                  <Flame className="w-4 h-4 text-amber-500" />
+                  <span>Escala de Precios al Mayor para este modelo:</span>
                 </div>
 
-                {product.tier3PriceUSD && (
-                  <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100">
-                    <span className="block text-[#009fe3] font-semibold text-xs">x3 piezas</span>
-                    <span className="font-bold text-[#0c3b74] block mt-0.5">{formatBs(product.tier3PriceUSD * currentRate)}</span>
-                    <span className="text-[11px] text-[#009fe3]">Ahorras 15%</span>
-                  </div>
-                )}
-
-                {product.tier6PriceUSD && (
-                  <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
-                    <span className="block text-amber-700 font-bold text-xs">1/2 Doc (6)</span>
-                    <span className="font-bold text-amber-800 block mt-0.5">{formatBs(product.tier6PriceUSD * currentRate)}</span>
-                    <span className="text-[11px] text-amber-600 font-medium">Mayor</span>
-                  </div>
-                )}
-
-                {product.tier12PriceUSD && (
+                <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm">
                   <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="block text-slate-600 font-semibold text-xs">Docena</span>
-                    <span className="font-bold text-slate-900 block mt-0.5">{formatBs(product.tier12PriceUSD * currentRate)}</span>
-                    <span className="text-[11px] text-emerald-700 font-medium">Super Mayor</span>
+                    <span className="block text-slate-400 text-xs">1 Unidad</span>
+                    <span className="font-bold text-slate-900 block mt-0.5">{formatBs((product.basePriceUSD || 0) * currentRate)}</span>
+                    <span className="text-[11px] text-slate-500">Detal</span>
                   </div>
-                )}
+
+                  {product.tier3PriceUSD && (
+                    <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100">
+                      <span className="block text-[#009fe3] font-semibold text-xs">x3 piezas</span>
+                      <span className="font-bold text-[#0c3b74] block mt-0.5">{formatBs(product.tier3PriceUSD * currentRate)}</span>
+                      <span className="text-[11px] text-[#009fe3]">Ahorras 15%</span>
+                    </div>
+                  )}
+
+                  {product.tier6PriceUSD && (
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                      <span className="block text-amber-700 font-bold text-xs">1/2 Doc (6)</span>
+                      <span className="font-bold text-amber-800 block mt-0.5">{formatBs(product.tier6PriceUSD * currentRate)}</span>
+                      <span className="text-[11px] text-amber-600 font-medium">Mayor</span>
+                    </div>
+                  )}
+
+                  {product.tier12PriceUSD && (
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      <span className="block text-slate-600 font-semibold text-xs">Docena</span>
+                      <span className="font-bold text-slate-900 block mt-0.5">{formatBs(product.tier12PriceUSD * currentRate)}</span>
+                      <span className="text-[11px] text-emerald-700 font-medium">Super Mayor</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Quantity Controls & Action Buttons */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center bg-slate-100 rounded-2xl border border-slate-200 p-1">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-                  aria-label="Restar cantidad"
-                >
-                  <Minus className="w-5 h-5" />
-                </button>
-                <span className="font-display font-bold text-lg text-slate-900 px-5">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-                  aria-label="Sumar cantidad"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Add to cart dinámico */}
-              {(() => {
-                const isVariantInStock = Boolean(selectedVariant && selectedVariant.stock > 0);
-
-                return (
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!selectedVariant}
-                    className={`flex-1 py-4 px-6 rounded-2xl font-display font-semibold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 active:scale-95 shadow-md cursor-pointer ${
-                      addedAnimation
-                        ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                        : isVariantInStock
-                        ? 'bg-[#009fe3] hover:bg-[#0087c2] text-white shadow-cyan-500/20'
-                        : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/25'
-                    }`}
-                  >
-                    {isVariantInStock ? (
-                      <ShoppingBag className="w-5 h-5" />
-                    ) : (
-                      <Clock className="w-5 h-5" />
-                    )}
-                    <span>
-                      {addedAnimation
-                        ? '¡Agregado al Carrito!'
-                        : isVariantInStock
-                        ? `Agregar ${quantity} al Carrito`
-                        : `Encargar Bajo Pedido (${quantity})`}
+              {/* Quantity Controls & Action Buttons Tradicionales */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center bg-slate-100 rounded-2xl border border-slate-200 p-1">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                      aria-label="Restar cantidad"
+                    >
+                      <Minus className="w-5 h-5" />
+                    </button>
+                    <span className="font-display font-bold text-lg text-slate-900 px-5">
+                      {quantity}
                     </span>
-                  </button>
-                );
-              })()}
-            </div>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-12 h-12 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                      aria-label="Sumar cantidad"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
 
-            {/* Direct WhatsApp button option */}
-            <button
-              onClick={handleDirectWhatsApp}
-              disabled={!selectedVariant}
-              className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 font-display font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
-            >
-              <span>Consultar o pedir directamente por WhatsApp</span>
-            </button>
-          </div>
+                  {/* Add to cart dinámico */}
+                  {(() => {
+                    const isVariantInStock = Boolean(selectedVariant && selectedVariant.stock > 0);
+
+                    return (
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={!selectedVariant}
+                        className={`flex-1 py-4 px-6 rounded-2xl font-display font-semibold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 active:scale-95 shadow-md cursor-pointer ${
+                          addedAnimation
+                            ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                            : isVariantInStock
+                            ? 'bg-[#009fe3] hover:bg-[#0087c2] text-white shadow-cyan-500/20'
+                            : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/25'
+                        }`}
+                      >
+                        {isVariantInStock ? (
+                          <ShoppingBag className="w-5 h-5" />
+                        ) : (
+                          <Clock className="w-5 h-5" />
+                        )}
+                        <span>
+                          {addedAnimation
+                            ? '¡Agregado al Carrito!'
+                            : isVariantInStock
+                            ? `Agregar ${quantity} al Carrito`
+                            : `Encargar Bajo Pedido (${quantity})`}
+                        </span>
+                      </button>
+                    );
+                  })()}
+                </div>
+
+                {/* Direct WhatsApp button option */}
+                <button
+                  onClick={handleDirectWhatsApp}
+                  disabled={!selectedVariant}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 font-display font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                >
+                  <span>Consultar o pedir directamente por WhatsApp</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

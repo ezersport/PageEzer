@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Product, ProductVariant } from '../types';
 import { addToCart, formatBs, emitEvent } from '../lib/store';
 import { CanvaViewer } from './CanvaViewer';
-import { X, Plus, Minus, Check, ShoppingBag, Flame, Sparkles, Clock, Info, Ruler } from 'lucide-react';
+import { X, Plus, Minus, Check, ShoppingBag, ShoppingCart, Zap, Flame, Sparkles, Clock, Info, Ruler } from 'lucide-react';
 
 interface ProductModalProps {
   product: Product | null;
@@ -136,6 +136,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
     setTimeout(() => {
       onClose();
     }, 400);
+  };
+
+  const handleDirectWhatsApp = () => {
+    const variantToAdd = selectedVariant || safeVariants[0];
+    if (!variantToAdd) return;
+    const selectedOption = variantToAdd.colorName || variantToAdd.optionName || 'Estándar';
+    const tierInfo = activeTier ? `- Presentación: ${activeTier}\n` : '';
+    const msg = `¡Hola Ezer Sport! Me interesa realizar este pedido:\n- Prenda: ${product.name}\n- Talla: ${variantToAdd.size}\n- Color/Diseño: ${selectedOption}\n${tierInfo}- Cantidad: ${quantity} pzas\n- Total: ${formatBs(totalBs)} ($${totalUSD.toFixed(2)} USD)\n\n¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
+    const encoded = encodeURIComponent(msg);
+    window.open(`https://wa.me/584241282108?text=${encoded}`, '_blank');
   };
 
   return (
@@ -391,109 +401,161 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
             </div>
           </div>
 
-          {/* Selector de Presentación / Paquetes Especiales */}
-          {Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="text-sm font-semibold text-slate-800 flex items-center justify-between">
-                <span>Elige tu Paquete o Escala de Cantidad:</span>
-                <span className="text-[#009fe3] font-bold text-xs">{activeTier}</span>
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+          {/* SECCIÓN ESPECIAL: ELIGE TU PRESENTACIÓN (DISEÑO SOLICITADO) */}
+          {Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0 ? (
+            <div className="space-y-4 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-black text-slate-900 text-base sm:text-lg">
+                  Elige tu presentación:
+                </h3>
+                <span className="bg-purple-100 text-purple-900 text-xs font-bold px-3 py-1 rounded-full">
+                  {product.escalas_precio.length} opciones
+                </span>
+              </div>
+
+              {/* Grid 2 Columnas de Tarjetas con Radio Button */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {product.escalas_precio.map((tier) => {
                   const isSelected = quantity === tier.cantidad;
+                  const priceBs = tier.precio_total_usd * (currentRate || 76.50);
+
                   return (
                     <button
                       key={tier.id}
                       type="button"
                       onClick={() => setQuantity(tier.cantidad)}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`p-4 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? 'border-[#009fe3] bg-blue-50/90 ring-2 ring-[#009fe3]/30 shadow-xs'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                          ? 'border-[#581c87] bg-purple-50/25 shadow-md ring-2 ring-[#581c87]/15'
+                          : 'border-slate-200 hover:border-slate-300 bg-white shadow-xs'
                       }`}
                     >
-                      <span className="text-xs font-bold text-slate-900 block truncate">
-                        {tier.nombre}
-                      </span>
-                      <div className="mt-1 flex items-baseline justify-between gap-1">
-                        <span className="text-sm font-black text-[#0c3b74]">
-                          ${tier.precio_total_usd.toFixed(2)}
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={`font-display font-black text-sm sm:text-base leading-snug ${
+                            isSelected ? 'text-[#581c87]' : 'text-slate-900'
+                          }`}
+                        >
+                          {tier.nombre}
                         </span>
-                        {tier.cantidad > 1 && (
-                          <span className="text-[10px] text-slate-500 font-medium">
-                            ${(tier.precio_total_usd / tier.cantidad).toFixed(2)} c/u
-                          </span>
-                        )}
+                        {/* Radio Button */}
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? 'border-[#581c87]' : 'border-slate-300'
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#581c87]" />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-dashed border-slate-200 my-2.5" />
+
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span
+                          className={`font-display font-black text-base sm:text-lg ${
+                            isSelected ? 'text-[#581c87]' : 'text-slate-900'
+                          }`}
+                        >
+                          {formatBs(priceBs)}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">
+                          ${tier.precio_total_usd.toFixed(2)} USD
+                        </span>
                       </div>
                     </button>
                   );
                 })}
               </div>
-            </div>
-          )}
 
-          {/* Cantidad y Botón de Agregar */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-            {/* Quantity Controls */}
-            <div className="flex items-center bg-slate-100 rounded-2xl border border-slate-200 p-1 w-full sm:w-auto justify-between">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-10 h-10 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-                aria-label="Restar cantidad"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="font-display font-bold text-base sm:text-lg text-slate-900 px-4">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-10 h-10 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-                aria-label="Sumar cantidad"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Total and Submit Button Dinámico */}
-            {(() => {
-              const isVariantInStock = Boolean(selectedVariant && selectedVariant.stock > 0);
-
-              return (
+              {/* Botones de Acción Estilo Púrpura (Exacto a la captura) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <button
+                  type="button"
                   onClick={handleAddToCart}
                   disabled={!selectedVariant}
-                  className={`flex-1 w-full py-4 px-6 rounded-2xl font-display font-semibold text-sm sm:text-base flex items-center justify-between transition-all duration-200 active:scale-95 shadow-md cursor-pointer ${
-                    addedAnimation
-                      ? 'bg-emerald-600 text-white'
-                      : isVariantInStock
-                      ? 'bg-[#009fe3] hover:bg-[#0087c2] text-white shadow-cyan-500/20'
-                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/25'
-                  }`}
+                  className="w-full py-4 px-6 rounded-full font-display font-black text-sm sm:text-base bg-[#581c87] hover:bg-[#4a1570] text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-950/20 active:scale-95 transition-all cursor-pointer"
                 >
-                  <div className="flex items-center gap-2">
-                    {isVariantInStock ? (
-                      <ShoppingBag className="w-5 h-5" />
-                    ) : (
-                      <Clock className="w-5 h-5" />
-                    )}
-                    <span>
-                      {addedAnimation
-                        ? '¡Agregado al Carrito!'
-                        : isVariantInStock
-                        ? `Agregar ${quantity} al Carrito`
-                        : `Encargar Bajo Pedido (${quantity})`}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="block text-sm font-bold leading-none">
-                      {formatBs(totalBs)}
-                    </span>
-                  </div>
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>{addedAnimation ? '¡Agregado al Carrito!' : 'Agregar al Carrito'}</span>
                 </button>
-              );
-            })()}
-          </div>
+
+                <button
+                  type="button"
+                  onClick={handleDirectWhatsApp}
+                  disabled={!selectedVariant}
+                  className="w-full py-4 px-6 rounded-full font-display font-black text-sm sm:text-base bg-white hover:bg-purple-50 text-[#581c87] border-2 border-[#581c87] flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
+                >
+                  <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  <span>Pedir Directamente</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Layout Estándar para productos tradicionales */
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+              {/* Quantity Controls */}
+              <div className="flex items-center bg-slate-100 rounded-2xl border border-slate-200 p-1 w-full sm:w-auto justify-between">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Restar cantidad"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="font-display font-bold text-base sm:text-lg text-slate-900 px-4">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 rounded-xl hover:bg-white text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Sumar cantidad"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Total and Submit Button Dinámico */}
+              {(() => {
+                const isVariantInStock = Boolean(selectedVariant && selectedVariant.stock > 0);
+
+                return (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={!selectedVariant}
+                    className={`flex-1 w-full py-4 px-6 rounded-2xl font-display font-semibold text-sm sm:text-base flex items-center justify-between transition-all duration-200 active:scale-95 shadow-md cursor-pointer ${
+                      addedAnimation
+                        ? 'bg-emerald-600 text-white'
+                        : isVariantInStock
+                        ? 'bg-[#009fe3] hover:bg-[#0087c2] text-white shadow-cyan-500/20'
+                        : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/25'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isVariantInStock ? (
+                        <ShoppingBag className="w-5 h-5" />
+                      ) : (
+                        <Clock className="w-5 h-5" />
+                      )}
+                      <span>
+                        {addedAnimation
+                          ? '¡Agregado al Carrito!'
+                          : isVariantInStock
+                          ? `Agregar ${quantity} al Carrito`
+                          : `Encargar Bajo Pedido (${quantity})`}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-sm font-bold leading-none">
+                        {formatBs(totalBs)}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })()}
+            </div>
+          )}
         </div>
       </div>
     </div>
