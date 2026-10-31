@@ -32,6 +32,15 @@ export interface SizeGuideRow {
   waist: string;
 }
 
+export interface PriceTier {
+  id: string;
+  nombre: string;
+  cantidad: number;
+  precio_total_usd: number;
+  precio_unitario_usd?: number;
+  costo_insumo_usd?: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -50,6 +59,7 @@ export interface Product {
   variants: ProductVariant[];
   canvaEmbedUrl?: string;
   canva_embed_url?: string;
+  escalas_precio?: PriceTier[];
   isFeatured?: boolean;
   badge?: string;
   isActive: boolean;
@@ -100,7 +110,8 @@ export interface CartItem {
   quantity: number;
   basePriceUSD: number;
   appliedUnitPriceUSD: number;
-  tierApplied?: 'detal' | 'tier3' | 'tier6' | 'tier12';
+  tierApplied?: 'detal' | 'tier3' | 'tier6' | 'tier12' | string;
+  selectedTierName?: string;
 }
 
 export type OrderStatus =

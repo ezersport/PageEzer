@@ -128,15 +128,31 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
   // Cálculo de precio según cantidad seleccionada
   let unitPriceUSD = product.basePriceUSD || 0;
   let activeTier = 'Precio Detal (1 unidad)';
-  if (quantity >= 12 && product.tier12PriceUSD) {
-    unitPriceUSD = product.tier12PriceUSD;
-    activeTier = 'Docena Mayorista (12+)';
-  } else if (quantity >= 6 && product.tier6PriceUSD) {
-    unitPriceUSD = product.tier6PriceUSD;
-    activeTier = 'Mayorista de Fábrica (6+)';
-  } else if (quantity >= 3 && product.tier3PriceUSD) {
-    unitPriceUSD = product.tier3PriceUSD;
-    activeTier = 'Promo x3 piezas';
+
+  if (Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0) {
+    const sortedTiers = [...product.escalas_precio].sort((a, b) => b.cantidad - a.cantidad);
+    const matched = sortedTiers.find((t) => quantity >= t.cantidad);
+    if (matched) {
+      unitPriceUSD = matched.precio_unitario_usd || (matched.precio_total_usd / matched.cantidad);
+      activeTier = matched.nombre;
+    } else {
+      const lowest = sortedTiers[sortedTiers.length - 1];
+      if (lowest && lowest.cantidad === 1) {
+        unitPriceUSD = lowest.precio_unitario_usd || lowest.precio_total_usd;
+        activeTier = lowest.nombre;
+      }
+    }
+  } else {
+    if (quantity >= 12 && product.tier12PriceUSD) {
+      unitPriceUSD = product.tier12PriceUSD;
+      activeTier = 'Docena Mayorista (12+)';
+    } else if (quantity >= 6 && product.tier6PriceUSD) {
+      unitPriceUSD = product.tier6PriceUSD;
+      activeTier = 'Mayorista de Fábrica (6+)';
+    } else if (quantity >= 3 && product.tier3PriceUSD) {
+      unitPriceUSD = product.tier3PriceUSD;
+      activeTier = 'Promo x3 piezas';
+    }
   }
 
   const totalUSD = unitPriceUSD * quantity;
@@ -433,45 +449,89 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             </div>
           </div>
 
-          {/* Wholesale Pricing Table */}
-          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-900">
-              <Flame className="w-4 h-4 text-amber-500" />
-              <span>Escala de Precios al Mayor para este modelo:</span>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm">
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="block text-slate-400 text-xs">1 Unidad</span>
-                <span className="font-bold text-slate-900 block mt-0.5">{formatBs((product.basePriceUSD || 0) * currentRate)}</span>
-                <span className="text-[11px] text-slate-500">Detal</span>
+          {/* Pricing Table / Presentaciones Especiales */}
+          {Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0 ? (
+            <div className="p-5 rounded-3xl bg-blue-50/50 border border-blue-200/80 shadow-xs space-y-3">
+              <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-900">
+                <div className="flex items-center gap-2 text-[#0c3b74]">
+                  <Flame className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Elige tu Presentación o Paquete por Volumen:</span>
+                </div>
+                <span className="text-[#009fe3] text-xs font-bold">{activeTier}</span>
               </div>
 
-              {product.tier3PriceUSD && (
-                <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100">
-                  <span className="block text-[#009fe3] font-semibold text-xs">x3 piezas</span>
-                  <span className="font-bold text-[#0c3b74] block mt-0.5">{formatBs(product.tier3PriceUSD * currentRate)}</span>
-                  <span className="text-[11px] text-[#009fe3]">Ahorras 15%</span>
-                </div>
-              )}
-
-              {product.tier6PriceUSD && (
-                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
-                  <span className="block text-amber-700 font-bold text-xs">1/2 Doc (6)</span>
-                  <span className="font-bold text-amber-800 block mt-0.5">{formatBs(product.tier6PriceUSD * currentRate)}</span>
-                  <span className="text-[11px] text-amber-600 font-medium">Mayor</span>
-                </div>
-              )}
-
-              {product.tier12PriceUSD && (
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="block text-slate-600 font-semibold text-xs">Docena</span>
-                  <span className="font-bold text-slate-900 block mt-0.5">{formatBs(product.tier12PriceUSD * currentRate)}</span>
-                  <span className="text-[11px] text-emerald-700 font-medium">Super Mayor</span>
-                </div>
-              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                {product.escalas_precio.map((tier) => {
+                  const isSelected = quantity === tier.cantidad;
+                  return (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      onClick={() => setQuantity(tier.cantidad)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-[#009fe3] bg-white ring-2 ring-[#009fe3]/30 shadow-md scale-[1.02]'
+                          : 'border-slate-200 hover:border-slate-300 bg-white/80'
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-slate-900 block truncate">
+                        {tier.nombre}
+                      </span>
+                      <div className="mt-1 flex items-baseline justify-between gap-1">
+                        <span className="text-base font-black text-[#0c3b74]">
+                          ${tier.precio_total_usd.toFixed(2)}
+                        </span>
+                        {tier.cantidad > 1 && (
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            ${(tier.precio_total_usd / tier.cantidad).toFixed(2)} c/u
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-900">
+                <Flame className="w-4 h-4 text-amber-500" />
+                <span>Escala de Precios al Mayor para este modelo:</span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span className="block text-slate-400 text-xs">1 Unidad</span>
+                  <span className="font-bold text-slate-900 block mt-0.5">{formatBs((product.basePriceUSD || 0) * currentRate)}</span>
+                  <span className="text-[11px] text-slate-500">Detal</span>
+                </div>
+
+                {product.tier3PriceUSD && (
+                  <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100">
+                    <span className="block text-[#009fe3] font-semibold text-xs">x3 piezas</span>
+                    <span className="font-bold text-[#0c3b74] block mt-0.5">{formatBs(product.tier3PriceUSD * currentRate)}</span>
+                    <span className="text-[11px] text-[#009fe3]">Ahorras 15%</span>
+                  </div>
+                )}
+
+                {product.tier6PriceUSD && (
+                  <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                    <span className="block text-amber-700 font-bold text-xs">1/2 Doc (6)</span>
+                    <span className="font-bold text-amber-800 block mt-0.5">{formatBs(product.tier6PriceUSD * currentRate)}</span>
+                    <span className="text-[11px] text-amber-600 font-medium">Mayor</span>
+                  </div>
+                )}
+
+                {product.tier12PriceUSD && (
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="block text-slate-600 font-semibold text-xs">Docena</span>
+                    <span className="font-bold text-slate-900 block mt-0.5">{formatBs(product.tier12PriceUSD * currentRate)}</span>
+                    <span className="text-[11px] text-emerald-700 font-medium">Super Mayor</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Quantity Controls & Action Buttons */}
           <div className="space-y-4 pt-2">

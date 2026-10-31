@@ -98,15 +98,31 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
 
   let unitPriceUSD = product.basePriceUSD || 0;
   let activeTier = 'Precio Detal';
-  if (quantity >= 12 && product.tier12PriceUSD) {
-    unitPriceUSD = product.tier12PriceUSD;
-    activeTier = 'Docena Mayorista (12+)';
-  } else if (quantity >= 6 && product.tier6PriceUSD) {
-    unitPriceUSD = product.tier6PriceUSD;
-    activeTier = 'Mayorista de Fábrica (6+)';
-  } else if (quantity >= 3 && product.tier3PriceUSD) {
-    unitPriceUSD = product.tier3PriceUSD;
-    activeTier = 'Promo x3 piezas';
+
+  if (Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0) {
+    const sortedTiers = [...product.escalas_precio].sort((a, b) => b.cantidad - a.cantidad);
+    const matched = sortedTiers.find((t) => quantity >= t.cantidad);
+    if (matched) {
+      unitPriceUSD = matched.precio_unitario_usd || (matched.precio_total_usd / matched.cantidad);
+      activeTier = matched.nombre;
+    } else {
+      const lowest = sortedTiers[sortedTiers.length - 1];
+      if (lowest && lowest.cantidad === 1) {
+        unitPriceUSD = lowest.precio_unitario_usd || lowest.precio_total_usd;
+        activeTier = lowest.nombre;
+      }
+    }
+  } else {
+    if (quantity >= 12 && product.tier12PriceUSD) {
+      unitPriceUSD = product.tier12PriceUSD;
+      activeTier = 'Docena Mayorista (12+)';
+    } else if (quantity >= 6 && product.tier6PriceUSD) {
+      unitPriceUSD = product.tier6PriceUSD;
+      activeTier = 'Mayorista de Fábrica (6+)';
+    } else if (quantity >= 3 && product.tier3PriceUSD) {
+      unitPriceUSD = product.tier3PriceUSD;
+      activeTier = 'Promo x3 piezas';
+    }
   }
 
   const totalUSD = unitPriceUSD * quantity;
@@ -374,6 +390,47 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
               })}
             </div>
           </div>
+
+          {/* Selector de Presentación / Paquetes Especiales */}
+          {Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <label className="text-sm font-semibold text-slate-800 flex items-center justify-between">
+                <span>Elige tu Paquete o Escala de Cantidad:</span>
+                <span className="text-[#009fe3] font-bold text-xs">{activeTier}</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                {product.escalas_precio.map((tier) => {
+                  const isSelected = quantity === tier.cantidad;
+                  return (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      onClick={() => setQuantity(tier.cantidad)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-[#009fe3] bg-blue-50/90 ring-2 ring-[#009fe3]/30 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-slate-900 block truncate">
+                        {tier.nombre}
+                      </span>
+                      <div className="mt-1 flex items-baseline justify-between gap-1">
+                        <span className="text-sm font-black text-[#0c3b74]">
+                          ${tier.precio_total_usd.toFixed(2)}
+                        </span>
+                        {tier.cantidad > 1 && (
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            ${(tier.precio_total_usd / tier.cantidad).toFixed(2)} c/u
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Cantidad y Botón de Agregar */}
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">

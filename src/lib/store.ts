@@ -102,6 +102,16 @@ export function normalizeProduct(p: any): Product {
   );
   const canvaEmbedUrl = extractCanvaEmbedUrl(rawCanvaUrl);
 
+  let escalas_precio = p.escalas_precio;
+  if (!escalas_precio && Array.isArray(p.imagenes_galeria)) {
+    const tierMarker = p.imagenes_galeria.find((img: any) => typeof img === 'string' && img.startsWith('tiers:'));
+    if (tierMarker) {
+      try {
+        escalas_precio = JSON.parse(tierMarker.replace('tiers:', ''));
+      } catch (e) {}
+    }
+  }
+
   return {
     id: String(p.id || `prod-${Date.now()}`),
     name: String(p.name || p.nombre || 'Prenda de Confección'),
@@ -120,6 +130,7 @@ export function normalizeProduct(p: any): Product {
     variants: safeVariants,
     canvaEmbedUrl,
     canva_embed_url: canvaEmbedUrl,
+    escalas_precio,
     isFeatured: Boolean(p.isFeatured ?? p.destacado),
     badge: p.badge || (p.destacado ? 'DESTACADO ⭐' : (canvaEmbedUrl ? '✨ CATÁLOGO 100+ FOTOS' : undefined)),
     isActive: p.isActive !== undefined ? Boolean(p.isActive) : (p.activo !== undefined ? Boolean(p.activo) : true),
@@ -594,27 +605,41 @@ export function calculateCartSummary(
     let tierApplied: CartItem['tierApplied'] = 'detal';
 
     if (product) {
-      if (totalProductUnits >= 12 && product.tier12PriceUSD) {
-        appliedPrice = product.tier12PriceUSD;
-        tierApplied = 'tier12';
-      } else if (totalProductUnits >= 6 && product.tier6PriceUSD) {
-        appliedPrice = product.tier6PriceUSD;
-        tierApplied = 'tier6';
-      } else if (totalProductUnits >= 3 && product.tier3PriceUSD) {
-        appliedPrice = product.tier3PriceUSD;
-        tierApplied = 'tier3';
-      }
+      if (Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0) {
+        const sortedTiers = [...product.escalas_precio].sort((a, b) => b.cantidad - a.cantidad);
+        const matchedTier = sortedTiers.find((t) => totalProductUnits >= t.cantidad);
+        if (matchedTier) {
+          appliedPrice = matchedTier.precio_unitario_usd || (matchedTier.precio_total_usd / matchedTier.cantidad);
+          tierApplied = matchedTier.nombre;
+        } else {
+          const lowestTier = sortedTiers[sortedTiers.length - 1];
+          if (lowestTier && lowestTier.cantidad === 1) {
+            appliedPrice = lowestTier.precio_unitario_usd || lowestTier.precio_total_usd;
+          }
+        }
+      } else {
+        if (totalProductUnits >= 12 && product.tier12PriceUSD) {
+          appliedPrice = product.tier12PriceUSD;
+          tierApplied = 'tier12';
+        } else if (totalProductUnits >= 6 && product.tier6PriceUSD) {
+          appliedPrice = product.tier6PriceUSD;
+          tierApplied = 'tier6';
+        } else if (totalProductUnits >= 3 && product.tier3PriceUSD) {
+          appliedPrice = product.tier3PriceUSD;
+          tierApplied = 'tier3';
+        }
 
-      // Mensaje de incentivo para siguiente tramo
-      if (totalProductUnits < 3 && product.tier3PriceUSD) {
-        const remaining = 3 - totalProductUnits;
-        volumeTierMessage = `¡Agrega ${remaining} prenda${remaining > 1 ? 's' : ''} más para activar precio especial x3 (${formatBs(product.tier3PriceUSD * currentRate)} c/u)!`;
-      } else if (totalProductUnits >= 3 && totalProductUnits < 6 && product.tier6PriceUSD) {
-        const remaining = 6 - totalProductUnits;
-        volumeTierMessage = `¡Estás a ${remaining} prenda${remaining > 1 ? 's' : ''} de precio de MEDIA DOCENA (${formatBs(product.tier6PriceUSD * currentRate)} c/u)!`;
-      } else if (totalProductUnits >= 6 && totalProductUnits < 12 && product.tier12PriceUSD) {
-        const remaining = 12 - totalProductUnits;
-        volumeTierMessage = `¡Añade ${remaining} prenda${remaining > 1 ? 's' : ''} para precio DOCENA MAYORISTA (${formatBs(product.tier12PriceUSD * currentRate)} c/u)!`;
+        // Mensaje de incentivo para siguiente tramo
+        if (totalProductUnits < 3 && product.tier3PriceUSD) {
+          const remaining = 3 - totalProductUnits;
+          volumeTierMessage = `¡Agrega ${remaining} prenda${remaining > 1 ? 's' : ''} más para activar precio especial x3 (${formatBs(product.tier3PriceUSD * currentRate)} c/u)!`;
+        } else if (totalProductUnits >= 3 && totalProductUnits < 6 && product.tier6PriceUSD) {
+          const remaining = 6 - totalProductUnits;
+          volumeTierMessage = `¡Estás a ${remaining} prenda${remaining > 1 ? 's' : ''} de precio de MEDIA DOCENA (${formatBs(product.tier6PriceUSD * currentRate)} c/u)!`;
+        } else if (totalProductUnits >= 6 && totalProductUnits < 12 && product.tier12PriceUSD) {
+          const remaining = 12 - totalProductUnits;
+          volumeTierMessage = `¡Añade ${remaining} prenda${remaining > 1 ? 's' : ''} para precio DOCENA MAYORISTA (${formatBs(product.tier12PriceUSD * currentRate)} c/u)!`;
+        }
       }
     }
 
