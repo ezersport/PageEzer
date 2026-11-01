@@ -195,14 +195,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
     if (!selectedVariant) return;
     const selectedOption = selectedVariant.colorName || selectedVariant.optionName || 'Estándar';
     const tierInfo = activeTier ? `- Presentación: ${activeTier}\n` : '';
-    const msg = `¡Hola Ezer Sport! Me interesa realizar este pedido:\n- Modelo: ${product.name}\n- Talla: ${selectedVariant.size}\n- Color/Estampa: ${selectedOption}\n${tierInfo}- Cantidad: ${quantity} pzas\n- Total: ${formatBs(totalBs)} ($${totalUSD.toFixed(2)} USD)\n\n¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
+    const msg = `¡Hola Ezer Sport! Me interesa realizar este pedido:\n- Modelo: ${product.name}\n- Talla: ${selectedVariant.size}\n- Color/Estampa: ${selectedOption}\n${tierInfo}- Cantidad: ${quantity} pzas\n- Total: ${formatBs(totalBs)}\n\n¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
 
     window.open(`https://wa.me/584241282108?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-      {/* Back button */}
+      {/* Botón Volver */}
       <div className="flex items-center justify-between">
         <a
           href="/#catalogo"
@@ -221,9 +221,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
         </button>
       </div>
 
-      {/* Main product presentation */}
+      {/* Presentación principal del producto */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-        {/* Gallery & Canva Section */}
+        {/* Galería & Sección Canva */}
         <div className="lg:col-span-6 space-y-4">
           <div className="rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 aspect-square relative shadow-lg">
             <img
@@ -232,7 +232,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               className="w-full h-full object-cover object-center"
             />
 
-            {/* Badges */}
+            {/* Badges (Sin revelar números de piezas) */}
             <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
               {product.categoryId === 'cat-navidad' && (
                 <span className="bg-rose-600 text-white text-xs sm:text-sm font-black px-3.5 py-1 rounded-full shadow-md">
@@ -246,8 +246,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               )}
 
               {selectedVariant && selectedVariant.stock > 0 ? (
-                <span className="bg-emerald-600 text-white text-xs sm:text-sm font-semibold px-3 py-1 rounded-full shadow-md">
-                  🟢 Stock en Almacén ({selectedVariant.stock} pzs)
+                <span className="bg-emerald-600 text-white text-xs sm:text-sm font-bold px-3 py-1 rounded-full shadow-md">
+                  🟢 Disponible en Stock
                 </span>
               ) : (
                 <span className="bg-amber-500 text-white text-xs sm:text-sm font-semibold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
@@ -269,7 +269,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
           )}
         </div>
 
-        {/* Purchase form */}
+        {/* Formulario de Compra */}
         <div className="lg:col-span-6 space-y-6">
           <div className="space-y-2">
             {product.fabric && (
@@ -284,7 +284,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
               {product.description}
             </p>
 
-            {/* Availability Notice Dinámico */}
+            {/* Aviso de Stock / Tiempo de Despacho (Sin cantidad de piezas) */}
             {(() => {
               const isVariantInStock = Boolean(selectedVariant && selectedVariant.stock > 0);
               const leadDays = product.productionDays || 2;
@@ -300,7 +300,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                 >
                   {isVariantInStock ? (
                     <span className="font-medium flex items-center gap-2">
-                      <span className="text-base font-bold">✓</span>
+                      <span className="text-base font-bold text-emerald-600">✓</span>
                       <span>Prenda disponible en stock: entrega inmediata / despacho en 24 a 48 horas hábiles.</span>
                     </span>
                   ) : (
@@ -316,7 +316,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             })()}
           </div>
 
-          {/* SECCIÓN DE PRECIOS: EN CARDS PARA PRODUCTOS CON ESCALAS O CAJA TRADICIONAL */}
+          {/* SECCIÓN DE PRECIOS: EN CARDS PARA PRODUCTOS CON ESCALAS O CAJA TRADICIONAL (SÓLO EN BS) */}
           {hasTiers ? (
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
@@ -333,7 +333,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                 {product.escalas_precio!.map((tier) => {
                   const isSelected = quantity === tier.cantidad;
                   const priceBs = tier.precio_total_usd * (currentRate || 76.50);
-                  const unitPrice = (tier.precio_total_usd / tier.cantidad).toFixed(2);
+                  const unitPriceBs = priceBs / tier.cantidad;
 
                   return (
                     <button
@@ -379,13 +379,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                           </span>
                           {tier.cantidad > 1 && (
                             <span className="text-xs font-semibold text-slate-500">
-                              (${unitPrice} c/u)
+                              ({formatBs(unitPriceBs)} c/u)
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-black text-slate-400">
-                          ${tier.precio_total_usd.toFixed(2)} USD
-                        </span>
                       </div>
                     </button>
                   );
@@ -525,7 +522,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             )}
           </div>
 
-          {/* Selector 2: Talla (100% Seleccionable) */}
+          {/* Selector 2: Talla (100% Seleccionable, sin revelar stock) */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm sm:text-base font-semibold text-slate-900">
@@ -568,7 +565,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                           : 'text-amber-600 font-semibold'
                       }`}
                     >
-                      {hasStock ? `${v.stock} disp.` : 'Bajo pedido'}
+                      {hasStock ? 'Disponible' : 'Bajo pedido'}
                     </span>
                   </button>
                 );
@@ -674,7 +671,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                   })()}
                 </div>
 
-                {/* Direct WhatsApp button option */}
+                {/* Botón WhatsApp directo */}
                 <button
                   onClick={handleDirectWhatsApp}
                   disabled={!selectedVariant}

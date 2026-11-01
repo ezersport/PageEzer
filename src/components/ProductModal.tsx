@@ -160,7 +160,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
     if (!variantToAdd) return;
     const selectedOption = variantToAdd.colorName || variantToAdd.optionName || 'Estándar';
     const tierInfo = activeTier ? `- Presentación: ${activeTier}\n` : '';
-    const msg = `¡Hola Ezer Sport! Me interesa realizar este pedido:\n- Prenda: ${product.name}\n- Talla: ${variantToAdd.size}\n- Color/Diseño: ${selectedOption}\n${tierInfo}- Cantidad: ${quantity} pzas\n- Total: ${formatBs(totalBs)} ($${totalUSD.toFixed(2)} USD)\n\n¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
+    const msg = `¡Hola Ezer Sport! Me interesa realizar este pedido:\n- Prenda: ${product.name}\n- Talla: ${variantToAdd.size}\n- Color/Diseño: ${selectedOption}\n${tierInfo}- Cantidad: ${quantity} pzas\n- Total: ${formatBs(totalBs)}\n\n¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
     const encoded = encodeURIComponent(msg);
     window.open(`https://wa.me/584241282108?text=${encoded}`, '_blank');
   };
@@ -194,7 +194,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
                 {selectedVariant && selectedVariant.stock > 0 ? (
                   <span className="bg-emerald-600 text-white text-[11px] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1">
                     <span>🟢 En Stock</span>
-                    <span className="opacity-90">({selectedVariant.stock} pzs)</span>
                   </span>
                 ) : (
                   <span className="bg-amber-500 text-white text-[11px] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1">
@@ -292,7 +291,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
                 {product.escalas_precio!.map((tier) => {
                   const isSelected = quantity === tier.cantidad;
                   const priceBs = tier.precio_total_usd * (currentRate || 76.50);
-                  const unitPrice = (tier.precio_total_usd / tier.cantidad).toFixed(2);
+                  const unitPriceBs = priceBs / tier.cantidad;
 
                   return (
                     <button
@@ -339,13 +338,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
                           </span>
                           {tier.cantidad > 1 && (
                             <span className="text-[11px] font-semibold text-slate-500">
-                              (${unitPrice} c/u)
+                              ({formatBs(unitPriceBs)} c/u)
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-black text-slate-400">
-                          ${tier.precio_total_usd.toFixed(2)} USD
-                        </span>
                       </div>
                     </button>
                   );
@@ -488,7 +484,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, currentRate
                           : 'text-amber-600 font-semibold'
                       }`}
                     >
-                      {hasStock ? `${v.stock} disp.` : 'Bajo pedido'}
+                      {hasStock ? 'Disponible' : 'Bajo pedido'}
                     </span>
                   </button>
                 );
