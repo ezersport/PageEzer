@@ -90,7 +90,15 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
   const [selectedImage, setSelectedImage] = useState<string>(
     (product.images && product.images[0]) || '/images/conjunto-ninos-mickey.webp'
   );
-  const [quantity, setQuantity] = useState<number>(1);
+
+  const hasTiers = Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0;
+
+  const [quantity, setQuantity] = useState<number>(() => {
+    if (hasTiers && product.escalas_precio![0]) {
+      return product.escalas_precio![0].cantidad;
+    }
+    return 1;
+  });
   const [addedAnimation, setAddedAnimation] = useState(false);
 
   useEffect(() => {
@@ -127,20 +135,31 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
     }
   }, [selectedColor, selectedMotif, product]);
 
+  useEffect(() => {
+    if (hasTiers && product.escalas_precio![0]) {
+      setQuantity(product.escalas_precio![0].cantidad);
+    } else {
+      setQuantity(1);
+    }
+  }, [product]);
+
   // Cálculo de precio según cantidad seleccionada
   let unitPriceUSD = product.basePriceUSD || 0;
-  let activeTier = 'Precio Detal (1 unidad)';
+  let activeTier = 'Precio Detal';
+  let matchedTierObject = null;
 
-  if (Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0) {
-    const sortedTiers = [...product.escalas_precio].sort((a, b) => b.cantidad - a.cantidad);
+  if (hasTiers) {
+    const sortedTiers = [...product.escalas_precio!].sort((a, b) => b.cantidad - a.cantidad);
     const matched = sortedTiers.find((t) => quantity >= t.cantidad);
     if (matched) {
+      matchedTierObject = matched;
       unitPriceUSD = matched.precio_unitario_usd || (matched.precio_total_usd / matched.cantidad);
       activeTier = matched.nombre;
     } else {
       const lowest = sortedTiers[sortedTiers.length - 1];
-      if (lowest && lowest.cantidad === 1) {
-        unitPriceUSD = lowest.precio_unitario_usd || lowest.precio_total_usd;
+      if (lowest) {
+        matchedTierObject = lowest;
+        unitPriceUSD = lowest.precio_unitario_usd || (lowest.precio_total_usd / lowest.cantidad);
         activeTier = lowest.nombre;
       }
     }
@@ -157,7 +176,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
     }
   }
 
-  const totalUSD = unitPriceUSD * quantity;
+  const totalUSD = matchedTierObject && quantity === matchedTierObject.cantidad
+    ? matchedTierObject.precio_total_usd
+    : unitPriceUSD * quantity;
   const totalBs = totalUSD * (currentRate || 76.50);
 
   const handleAddToCart = () => {
@@ -172,14 +193,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
 
   const handleDirectWhatsApp = () => {
     if (!selectedVariant) return;
-    const msg = `¡Hola Ezer Sport! Me interesa consultar la siguiente prenda:
-- Modelo: ${product.name}
-- Talla: ${selectedVariant.size}
-- ${product.variantType === 'print' ? 'Estampado' : 'Color'}: ${selectedOption}
-- Cantidad: ${quantity}
-- Total estimado: ${formatBs(totalBs)}
-
-¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
+    const selectedOption = selectedVariant.colorName || selectedVariant.optionName || 'Estándar';
+    const tierInfo = activeTier ? `- Presentación: ${activeTier}\n` : '';
+    const msg = `¡Hola Ezer Sport! Me interesa realizar este pedido:\n- Modelo: ${product.name}\n- Talla: ${selectedVariant.size}\n- Color/Estampa: ${selectedOption}\n${tierInfo}- Cantidad: ${quantity} pzas\n- Total: ${formatBs(totalBs)} ($${totalUSD.toFixed(2)} USD)\n\n¿Tienen disponibilidad para coordinar la entrega? ¡Muchas gracias!`;
 
     window.open(`https://wa.me/584241282108?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -198,7 +214,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
 
         <button
           onClick={() => emitEvent('ezer-open-cart')}
-          className="text-xs sm:text-sm font-semibold text-[#0c3b74] bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 flex items-center gap-2"
+          className="text-xs sm:text-sm font-semibold text-[#0c3b74] bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 flex items-center gap-2 cursor-pointer"
         >
           <ShoppingBag className="w-4 h-4 text-[#009fe3]" />
           <span>Ver mi carrito</span>
@@ -207,7 +223,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
 
       {/* Main product presentation */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-        {/* Gallery */}
+        {/* Gallery & Canva Section */}
         <div className="lg:col-span-6 space-y-4">
           <div className="rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 aspect-square relative shadow-lg">
             <img
@@ -218,7 +234,12 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
 
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
-              {product.badge && (
+              {product.categoryId === 'cat-navidad' && (
+                <span className="bg-rose-600 text-white text-xs sm:text-sm font-black px-3.5 py-1 rounded-full shadow-md">
+                  🎄 Especial Navidad
+                </span>
+              )}
+              {product.badge && product.categoryId !== 'cat-navidad' && (
                 <span className="bg-[#0c3b74] text-white text-xs sm:text-sm font-bold px-3.5 py-1 rounded-full shadow-md">
                   {product.badge}
                 </span>
@@ -237,7 +258,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             </div>
           </div>
 
-          {/* Visor Interactivo de Canva (Si la prenda tiene catálogo de fotos vinculado) */}
+          {/* Visor Interactivo de Canva */}
           {product.canvaEmbedUrl && (
             <div className="pt-2">
               <CanvaViewer
@@ -295,23 +316,127 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             })()}
           </div>
 
-          {/* Price Box */}
-          <div className="p-5 rounded-3xl bg-blue-50/70 border border-blue-100 space-y-3">
-            <div className="flex items-baseline justify-between gap-4">
-              <div>
-                <span className="text-xs text-slate-500 block">Total estimado:</span>
-                <span className="font-display font-black text-3xl sm:text-4xl text-[#0c3b74]">
-                  {formatBs(totalBs)}
+          {/* SECCIÓN DE PRECIOS: EN CARDS PARA PRODUCTOS CON ESCALAS O CAJA TRADICIONAL */}
+          {hasTiers ? (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-black text-slate-900 text-lg sm:text-xl">
+                  Elige tu presentación:
+                </h3>
+                <span className="bg-sky-100 text-[#0c3b74] text-xs font-black px-3 py-1 rounded-full">
+                  {product.escalas_precio!.length} opciones de precio
                 </span>
               </div>
-              <span className="text-xs sm:text-sm font-bold text-[#0c3b74] bg-white px-3 py-1 rounded-full border border-blue-100">
-                {activeTier}
-              </span>
+
+              {/* Grid 2 Columnas de Tarjetas de Presentación en Colores Ezer (#009fe3 y #0c3b74) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {product.escalas_precio!.map((tier) => {
+                  const isSelected = quantity === tier.cantidad;
+                  const priceBs = tier.precio_total_usd * (currentRate || 76.50);
+                  const unitPrice = (tier.precio_total_usd / tier.cantidad).toFixed(2);
+
+                  return (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      onClick={() => setQuantity(tier.cantidad)}
+                      className={`p-4 sm:p-5 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-[#009fe3] bg-sky-50/80 shadow-md ring-2 ring-[#009fe3]/25'
+                          : 'border-slate-200 hover:border-slate-300 bg-white shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={`font-display font-black text-base sm:text-lg leading-snug ${
+                            isSelected ? 'text-[#0c3b74]' : 'text-slate-900'
+                          }`}
+                        >
+                          {tier.nombre}
+                        </span>
+                        {/* Radio Button Ezer */}
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected ? 'border-[#009fe3]' : 'border-slate-300'
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#009fe3]" />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-dashed border-slate-200/80 my-3" />
+
+                      <div className="flex items-baseline justify-between gap-2">
+                        <div>
+                          <span
+                            className={`font-display font-black text-lg sm:text-xl block leading-tight ${
+                              isSelected ? 'text-[#0c3b74]' : 'text-slate-900'
+                            }`}
+                          >
+                            {formatBs(priceBs)}
+                          </span>
+                          {tier.cantidad > 1 && (
+                            <span className="text-xs font-semibold text-slate-500">
+                              (${unitPrice} c/u)
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-black text-slate-400">
+                          ${tier.precio_total_usd.toFixed(2)} USD
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Botones de Acción Estilo Ezer */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3">
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={!selectedVariant}
+                  className="w-full py-4 px-6 rounded-full font-display font-black text-base sm:text-lg bg-[#009fe3] hover:bg-[#0082ba] text-white flex items-center justify-center gap-2.5 shadow-lg shadow-cyan-500/25 active:scale-95 transition-all cursor-pointer"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>{addedAnimation ? '¡Agregado al Carrito!' : `Agregar ${quantity} al Carrito`}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDirectWhatsApp}
+                  disabled={!selectedVariant}
+                  className="w-full py-4 px-6 rounded-full font-display font-black text-base sm:text-lg bg-white hover:bg-sky-50 text-[#0c3b74] border-2 border-[#009fe3] flex items-center justify-center gap-2.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  <span>Pedir Directamente</span>
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Layout Tradicional */
+            <>
+              {/* Price Box */}
+              <div className="p-5 rounded-3xl bg-blue-50/70 border border-blue-100 space-y-3">
+                <div className="flex items-baseline justify-between gap-4">
+                  <div>
+                    <span className="text-xs text-slate-500 block">Total estimado:</span>
+                    <span className="font-display font-black text-3xl sm:text-4xl text-[#0c3b74]">
+                      {formatBs(totalBs)}
+                    </span>
+                  </div>
+                  <span className="text-xs sm:text-sm font-bold text-[#0c3b74] bg-white px-3 py-1 rounded-full border border-blue-100">
+                    {activeTier}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Selector 1: Color de la Prenda */}
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             <label className="text-sm sm:text-base font-semibold text-slate-900 flex items-center justify-between">
               <span>1. Elige el Color de la Prenda:</span>
               <span className="text-[#009fe3] font-bold">{selectedColor}</span>
@@ -451,98 +576,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             </div>
           </div>
 
-          {/* Presentaciones Especiales (Diseño de la Captura) / Pricing Table Tradicional */}
-          {Array.isArray(product.escalas_precio) && product.escalas_precio.length > 0 ? (
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-display font-black text-slate-900 text-lg sm:text-xl">
-                  Elige tu presentación:
-                </h3>
-                <span className="bg-purple-100 text-purple-900 text-xs font-bold px-3 py-1 rounded-full">
-                  {product.escalas_precio.length} opciones
-                </span>
-              </div>
-
-              {/* Grid 2 Columnas de Tarjetas de Presentación */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {product.escalas_precio.map((tier) => {
-                  const isSelected = quantity === tier.cantidad;
-                  const priceBs = tier.precio_total_usd * (currentRate || 76.50);
-
-                  return (
-                    <button
-                      key={tier.id}
-                      type="button"
-                      onClick={() => setQuantity(tier.cantidad)}
-                      className={`p-4 sm:p-5 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-[#581c87] bg-purple-50/25 shadow-md ring-2 ring-[#581c87]/15'
-                          : 'border-slate-200 hover:border-slate-300 bg-white shadow-xs'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className={`font-display font-black text-base sm:text-lg leading-snug ${
-                            isSelected ? 'text-[#581c87]' : 'text-slate-900'
-                          }`}
-                        >
-                          {tier.nombre}
-                        </span>
-                        {/* Radio Button */}
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                            isSelected ? 'border-[#581c87]' : 'border-slate-300'
-                          }`}
-                        >
-                          {isSelected && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-[#581c87]" />
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="border-t border-dashed border-slate-200/80 my-3" />
-
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span
-                          className={`font-display font-black text-lg sm:text-xl ${
-                            isSelected ? 'text-[#581c87]' : 'text-slate-900'
-                          }`}
-                        >
-                          {formatBs(priceBs)}
-                        </span>
-                        <span className="text-xs font-bold text-slate-400">
-                          ${tier.precio_total_usd.toFixed(2)} USD
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Botones de Acción Estilo Púrpura (Exacto a la captura) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3">
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={!selectedVariant}
-                  className="w-full py-4 px-6 rounded-full font-display font-black text-base sm:text-lg bg-[#581c87] hover:bg-[#4a1570] text-white flex items-center justify-center gap-2.5 shadow-lg shadow-purple-950/20 active:scale-95 transition-all cursor-pointer"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  <span>{addedAnimation ? '¡Agregado al Carrito!' : 'Agregar al Carrito'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDirectWhatsApp}
-                  disabled={!selectedVariant}
-                  className="w-full py-4 px-6 rounded-full font-display font-black text-base sm:text-lg bg-white hover:bg-purple-50 text-[#581c87] border-2 border-[#581c87] flex items-center justify-center gap-2.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-                >
-                  <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-                  <span>Pedir Directamente</span>
-                </button>
-              </div>
-            </div>
-          ) : (
+          {/* Para productos sin escalas personalizadas: tabla tradicional y controles */}
+          {!hasTiers && (
             <>
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
                 <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-900">
