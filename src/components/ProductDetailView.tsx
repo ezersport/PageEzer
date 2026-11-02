@@ -11,6 +11,7 @@ import { CheckoutModal } from './CheckoutModal';
 import { CanvaViewer } from './CanvaViewer';
 import {
   ArrowLeft,
+  X,
   Check,
   Plus,
   Minus,
@@ -100,6 +101,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
     return 1;
   });
   const [addedAnimation, setAddedAnimation] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const toastTimeoutRef = React.useRef<any>(null);
 
   useEffect(() => {
     if (product.images && product.images.length > 0) {
@@ -129,11 +133,25 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
         }
         return true;
       });
-      setSelectedVariant(motifMatches[0] || newMatches[0]);
+      const resolved = motifMatches[0] || newMatches[0];
+      setSelectedVariant(resolved);
+      if (resolved?.imagePreview && resolved.imagePreview !== '/images/conjunto-ninos-mickey.webp') {
+        setSelectedImage(resolved.imagePreview);
+      }
     } else {
       setSelectedVariant(safeVariants[0]);
+      if (safeVariants[0]?.imagePreview && safeVariants[0].imagePreview !== '/images/conjunto-ninos-mickey.webp') {
+        setSelectedImage(safeVariants[0].imagePreview);
+      }
     }
   }, [selectedColor, selectedMotif, product]);
+
+  // Si cambia la variante seleccionada y tiene imagen asignada, actualizar foto principal
+  useEffect(() => {
+    if (selectedVariant?.imagePreview && selectedVariant.imagePreview !== '/images/conjunto-ninos-mickey.webp') {
+      setSelectedImage(selectedVariant.imagePreview);
+    }
+  }, [selectedVariant]);
 
   useEffect(() => {
     if (hasTiers && product.escalas_precio![0]) {
@@ -184,11 +202,32 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
   const handleAddToCart = () => {
     const variantToAdd = selectedVariant || safeVariants[0];
     if (!variantToAdd) return;
-    addToCart(product, variantToAdd, quantity);
+    addToCart(product, variantToAdd, quantity, selectedImage);
     setAddedAnimation(true);
-    setTimeout(() => {
+    const designLabel = variantToAdd.optionName || variantToAdd.colorName || 'Prenda';
+    setToastMessage(`${quantity}x ${product.name} (${designLabel})`);
+    setShowToast(true);
+
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
       setAddedAnimation(false);
-    }, 1500);
+      setShowToast(false);
+    }, 3500);
+  };
+
+  const handleThumbnailClick = (img: string) => {
+    setSelectedImage(img);
+    // Buscar si alguna variante está vinculada a esta foto
+    const matchingVar = safeVariants.find((v) => v.imagePreview === img);
+    if (matchingVar) {
+      if (matchingVar.colorName && availableColors.includes(matchingVar.colorName)) {
+        setSelectedColor(matchingVar.colorName);
+      }
+      if (matchingVar.optionName && matchingVar.optionName !== matchingVar.colorName) {
+        setSelectedMotif(matchingVar.optionName);
+      }
+      setSelectedVariant(matchingVar);
+    }
   };
 
   const handleDirectWhatsApp = () => {
@@ -271,7 +310,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setSelectedImage(img)}
+                      onClick={() => handleThumbnailClick(img)}
                       className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
                         isSelected
                           ? 'border-[#009fe3] ring-3 ring-[#009fe3]/25 shadow-md scale-105'
@@ -489,7 +528,28 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                   <button
                     key={col}
                     type="button"
-                    onClick={() => setSelectedColor(col)}
+                    onClick={() => {
+                      setSelectedColor(col);
+                      const matchingForCol = safeVariants.filter(
+                        (v) => (v.colorName || v.optionName || 'Color Estándar') === col
+                      );
+                      const motifsForCol = Array.from(
+                        new Set(
+                          matchingForCol
+                            .map((v) => v.optionName)
+                            .filter((opt) => opt && opt !== col && opt !== 'Estándar')
+                        )
+                      );
+                      const nextMotif = motifsForCol[0] || '';
+                      setSelectedMotif(nextMotif);
+                      const foundVar = matchingForCol.find((v) => !nextMotif || v.optionName === nextMotif) || matchingForCol[0];
+                      if (foundVar) {
+                        setSelectedVariant(foundVar);
+                        if (foundVar.imagePreview && foundVar.imagePreview !== '/images/conjunto-ninos-mickey.webp') {
+                          setSelectedImage(foundVar.imagePreview);
+                        }
+                      }
+                    }}
                     className="group flex flex-col items-center gap-1.5 cursor-pointer focus:outline-none"
                     title={col}
                   >
@@ -534,7 +594,16 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
                     <button
                       key={motif}
                       type="button"
-                      onClick={() => setSelectedMotif(motif)}
+                      onClick={() => {
+                        setSelectedMotif(motif);
+                        const foundVar = variantsForColor.find((v) => v.optionName === motif) || variantsForColor[0];
+                        if (foundVar) {
+                          setSelectedVariant(foundVar);
+                          if (foundVar.imagePreview && foundVar.imagePreview !== '/images/conjunto-ninos-mickey.webp') {
+                            setSelectedImage(foundVar.imagePreview);
+                          }
+                        }
+                      }}
                       className={`px-3.5 py-2 rounded-xl text-xs font-medium border cursor-pointer ${
                         selectedMotif === motif
                           ? 'bg-[#0c3b74] text-white border-[#0c3b74]'
@@ -718,6 +787,39 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
       </div>
 
       {/* Global Modals for Checkout and Cart Drawer */}
+      {/* Floating Toast Notification discreto sin abrir el drawer abruptamente */}
+      {showToast && (
+        <div className="fixed bottom-6 inset-x-4 max-w-md mx-auto z-50 bg-[#0c3b74] text-white p-3.5 sm:p-4 rounded-3xl shadow-2xl flex items-center justify-between gap-3 border border-sky-400/30 animate-bounce-subtle">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+              <Check className="w-5 h-5" />
+            </div>
+            <div className="truncate text-xs sm:text-sm">
+              <p className="font-bold text-white">¡Prenda agregada al carrito!</p>
+              <p className="text-sky-200 text-[11px] truncate">{toastMessage}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => {
+                setShowToast(false);
+                emitEvent('ezer-open-cart');
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-[#009fe3] hover:bg-[#0082ba] text-white font-bold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer"
+            >
+              Ver Carrito
+            </button>
+            <button
+              onClick={() => setShowToast(false)}
+              className="p-1.5 text-white/60 hover:text-white rounded-lg transition-colors cursor-pointer"
+              aria-label="Cerrar aviso"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <CartDrawer onOpenCheckout={() => setCheckoutOpen(true)} />
       <CheckoutModal isOpen={checkoutOpen} onClose={() => setCheckoutOpen(false)} />
     </div>

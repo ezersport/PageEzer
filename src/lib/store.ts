@@ -62,17 +62,57 @@ export function normalizeProduct(p: any): Product {
   const rawGallery = Array.isArray(p.imagenes_galeria) 
     ? p.imagenes_galeria 
     : (Array.isArray(p.images) ? p.images.slice(1) : []);
-  const cleanGallery = rawGallery.filter((img: any) => typeof img === 'string' && img.trim() && !img.startsWith('canva:') && !img.startsWith('tiers:'));
-  const images = (rawMainImage ? [rawMainImage, ...cleanGallery] : cleanGallery).filter(Boolean);
 
+  let vimgMap: Record<string, string> = {};
+  const vimgMarker = rawGallery.find((img: any) => typeof img === 'string' && img.startsWith('vimg:'));
+  if (vimgMarker) {
+    try {
+      vimgMap = JSON.parse(vimgMarker.replace('vimg:', ''));
+    } catch (e) {}
+  }
+
+  const cleanGallery = rawGallery.filter((img: any) => 
+    typeof img === 'string' && 
+    img.trim() && 
+    !img.startsWith('canva:') && 
+    !img.startsWith('tiers:') && 
+    !img.startsWith('vimg:')
+  );
+  const images = (rawMainImage ? [rawMainImage, ...cleanGallery] : cleanGallery).filter(Boolean);
   const fallbackImage = images.length > 0 ? images[0] : '/images/conjunto-ninos-mickey.webp';
 
-  const rawVariants = (Array.isArray(p.variants) ? p.variants : (Array.isArray(p.variantes) ? p.variantes : (Array.isArray(p.product_variants) ? p.product_variants : []))).map((v: any, idx: number) => {
+  const rawVariantsList = Array.isArray(p.variants) 
+    ? p.variants 
+    : (Array.isArray(p.variantes) ? p.variantes : (Array.isArray(p.product_variants) ? p.product_variants : []));
+
+  // Heurística de motivos únicos para vincular con imágenes si aún no se guardó vimgMap
+  const uniqueMotifs: string[] = [];
+  rawVariantsList.forEach((v: any) => {
+    const motif = (v.nombre_variante || v.optionName || '').trim();
+    if (motif && !uniqueMotifs.includes(motif)) {
+      uniqueMotifs.push(motif);
+    }
+  });
+
+  const rawVariants = rawVariantsList.map((v: any, idx: number) => {
     const rawColorBase = (v.color_base || v.colorName || '').trim();
     const rawDesign = (v.nombre_variante || v.optionName || '').trim();
     const hex = v.colorHex || v.codigo_hex || '#009fe3';
     const colorName = rawColorBase || (v.tipo_variante === 'unicolor' && rawDesign ? rawDesign : 'Color Estándar');
     const optionName = rawDesign || colorName;
+
+    // Buscar foto vinculada por ID de variante, nombre de diseño o color base
+    let assignedImage = vimgMap[String(v.id)] || vimgMap[rawDesign] || vimgMap[optionName] || vimgMap[rawColorBase];
+
+    // Heurística automática por orden de imágenes si no hay vimgMap explícito
+    if (!assignedImage && uniqueMotifs.length > 1 && images.length > 1) {
+      const motifIdx = uniqueMotifs.indexOf(rawDesign);
+      if (motifIdx >= 0 && images[motifIdx]) {
+        assignedImage = images[motifIdx];
+      }
+    }
+
+    const imagePreview = assignedImage || v.imagePreview || v.imagen_variante_url || fallbackImage;
 
     return {
       id: String(v.id || `v-${idx}`),
@@ -81,7 +121,7 @@ export function normalizeProduct(p: any): Product {
       colorName,
       colorHex: hex,
       stock: Number(v.stock ?? v.stock_disponible ?? 0),
-      imagePreview: v.imagePreview || v.imagen_variante_url || fallbackImage,
+      imagePreview,
     };
   });
 
@@ -497,15 +537,25 @@ export function saveCartItems(items: CartItem[]) {
 export function addToCart(
   product: Product,
   variant: ProductVariant,
-  quantity: number = 1
+  quantity: number = 1,
+  selectedImage?: string
 ) {
   const cart = getCartItems();
   const isBajoPedido = variant.stock <= 0;
   const cartItemId = `${product.id}-${variant.id}`;
   const existingIndex = cart.findIndex((item) => item.cartItemId === cartItemId);
 
+  const fallbackDefaultImg = '/images/kids-sweaters.webp';
+  const resolvedImage = selectedImage
+    || (variant.imagePreview && variant.imagePreview !== '/images/conjunto-ninos-mickey.webp' && variant.imagePreview !== fallbackDefaultImg ? variant.imagePreview : undefined)
+    || (product.images && product.images[0])
+    || fallbackDefaultImg;
+
   if (existingIndex > -1) {
     cart[existingIndex].quantity += quantity;
+    if (resolvedImage) {
+      cart[existingIndex].image = resolvedImage;
+    }
   } else {
     cart.push({
       cartItemId,
@@ -520,7 +570,7 @@ export function addToCart(
       availability: isBajoPedido ? 'bajo_pedido' : 'inmediato',
       isBajoPedido,
       productionDays: product.productionDays || 2,
-      image: (product.images && product.images[0]) || '/images/kids-sweaters.webp',
+      image: resolvedImage,
       quantity,
       basePriceUSD: product.basePriceUSD,
       appliedUnitPriceUSD: product.basePriceUSD,
@@ -528,7 +578,7 @@ export function addToCart(
   }
 
   saveCartItems(cart);
-  emitEvent('ezer-open-cart');
+  // Auto popup removed: improves UX on mobile and avoids interrupting buyer journey
 }
 
 export function updateCartItemQuantity(cartItemId: string, newQty: number) {
