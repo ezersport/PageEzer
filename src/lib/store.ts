@@ -58,9 +58,12 @@ export function extractCanvaEmbedUrl(input?: string | null): string | undefined 
 
 // Normalizador universal y defensivo de productos (Soporta productos sin variantes creados en ezer-admin)
 export function normalizeProduct(p: any): Product {
-  const images = (Array.isArray(p.images) && p.images.length > 0)
-    ? p.images
-    : [p.imagen_principal, ...(Array.isArray(p.imagenes_galeria) ? p.imagenes_galeria : [])].filter(Boolean);
+  const rawMainImage = p.imagen_principal_url || p.imagen_principal || (Array.isArray(p.images) ? p.images[0] : undefined);
+  const rawGallery = Array.isArray(p.imagenes_galeria) 
+    ? p.imagenes_galeria 
+    : (Array.isArray(p.images) ? p.images.slice(1) : []);
+  const cleanGallery = rawGallery.filter((img: any) => typeof img === 'string' && img.trim() && !img.startsWith('canva:') && !img.startsWith('tiers:'));
+  const images = (rawMainImage ? [rawMainImage, ...cleanGallery] : cleanGallery).filter(Boolean);
 
   const fallbackImage = images.length > 0 ? images[0] : '/images/conjunto-ninos-mickey.webp';
 

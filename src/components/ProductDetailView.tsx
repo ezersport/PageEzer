@@ -258,6 +258,38 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product })
             </div>
           </div>
 
+          {/* Miniaturas de Fotos Secundarias / Galería de la Prenda */}
+          {product.images && product.images.length > 1 && (
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                Fotos de la prenda ({product.images.length} fotos disponibles):
+              </span>
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+                {product.images.map((img, idx) => {
+                  const isSelected = selectedImage === img;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedImage(img)}
+                      className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-[#009fe3] ring-3 ring-[#009fe3]/25 shadow-md scale-105'
+                          : 'border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100 bg-slate-50'
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt={`Foto ${idx + 1} de ${product.name}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Visor Interactivo de Canva */}
           {product.canvaEmbedUrl && (
             <div className="pt-2">
