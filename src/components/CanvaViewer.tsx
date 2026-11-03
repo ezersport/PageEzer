@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Sparkles, Maximize2, Loader2, ExternalLink, BookOpen } from 'lucide-react';
+import { Sparkles, Maximize2, Minimize2, Loader2, BookOpen } from 'lucide-react';
 import { extractCanvaEmbedUrl } from '../lib/store';
 
 interface CanvaViewerProps {
@@ -10,6 +10,7 @@ interface CanvaViewerProps {
 
 export const CanvaViewer: React.FC<CanvaViewerProps> = ({ url, title, className = '' }) => {
   const [loading, setLoading] = useState(true);
+  const [isLargeView, setIsLargeView] = useState(true);
   const embedUrl = extractCanvaEmbedUrl(url);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +30,7 @@ export const CanvaViewer: React.FC<CanvaViewerProps> = ({ url, title, className 
   return (
     <div
       ref={containerRef}
-      className={`rounded-2xl sm:rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-md flex flex-col ${className}`}
+      className={`rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xl flex flex-col transition-all ${className}`}
     >
       {/* Header del Visor Interactivo */}
       <div className="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 px-4 py-3 sm:px-5 sm:py-3.5 text-white flex items-center justify-between gap-3 shadow-xs">
@@ -47,16 +48,38 @@ export const CanvaViewer: React.FC<CanvaViewerProps> = ({ url, title, className 
               </span>
             </div>
             <p className="text-[11px] sm:text-xs text-white/90 truncate">
-              {title || 'Desliza las páginas para ver todos los estampados'}
+              {title || 'Toca ‹ › abajo en la foto para ver todos los modelos'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Botón cambiar tamaño vertical */}
+          <button
+            type="button"
+            onClick={() => setIsLargeView(!isLargeView)}
+            className="p-1.5 sm:p-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white flex items-center gap-1 text-xs font-bold cursor-pointer"
+            title={isLargeView ? 'Vista Estándar' : 'Vista Gigante'}
+            aria-label="Cambiar tamaño"
+          >
+            {isLargeView ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Normal</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Grande</span>
+              </>
+            )}
+          </button>
+
+          {/* Botón pantalla completa nativo */}
           <button
             type="button"
             onClick={handleToggleFullscreen}
-            className="p-1.5 sm:p-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white flex items-center gap-1 text-xs font-medium cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white flex items-center gap-1 text-xs font-bold cursor-pointer"
             title="Ver catálogo a pantalla completa"
             aria-label="Ver a pantalla completa"
           >
@@ -66,18 +89,24 @@ export const CanvaViewer: React.FC<CanvaViewerProps> = ({ url, title, className 
         </div>
       </div>
 
-      {/* Contenedor Iframe con Proporción Adaptable */}
-      <div className="relative w-full bg-slate-900 aspect-[4/3] sm:aspect-video min-h-[340px] sm:min-h-[420px] max-h-[580px] overflow-hidden">
+      {/* Contenedor Iframe Grande y Vertical para Modelos Navideños y Diseños Móvil */}
+      <div
+        className={`relative w-full bg-slate-950 overflow-hidden transition-all duration-300 ${
+          isLargeView
+            ? 'h-[75vh] min-h-[580px] sm:min-h-[700px] max-h-[880px]'
+            : 'h-[50vh] min-h-[380px] max-h-[520px]'
+        }`}
+      >
         {/* Skeleton mientras carga Canva */}
         {loading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/90 text-white gap-3 p-4 text-center">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950 text-white gap-3 p-4 text-center">
             <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
             <div className="space-y-1">
               <p className="font-semibold text-sm sm:text-base text-amber-200">
-                Cargando fotos del catálogo...
+                Cargando catálogo en alta resolución...
               </p>
               <p className="text-xs text-slate-300 max-w-xs">
-                Conectando con el visor de alta resolución.
+                Preparando todas las fotos y estampados navideños.
               </p>
             </div>
           </div>
@@ -89,22 +118,21 @@ export const CanvaViewer: React.FC<CanvaViewerProps> = ({ url, title, className 
           title={title || 'Catálogo de Diseños Canva'}
           src={embedUrl}
           onLoad={() => setLoading(false)}
-          allow="fullscreen"
+          allow="fullscreen; clipboard-write; encrypted-media"
           allowFullScreen
-          className="absolute inset-0 w-full h-full border-0 select-none"
+          className="absolute inset-0 w-full h-full border-0"
         />
       </div>
 
-      {/* Barra de Instrucción Móvil Inferior */}
-      <div className="bg-slate-50 px-4 py-2.5 sm:px-5 sm:py-3 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
-        <div className="flex items-center gap-2">
-          <span className="text-base sm:text-lg">👆</span>
-          <span>
-            <strong className="text-slate-800 font-semibold">Tip para tu pedido:</strong> Pasa las páginas con el dedo para ver todas las fotos. Recuerda el modelo que te guste para pedirlo abajo.
+      {/* Barra de Instrucción Móvil Inferior con Explicación Clara */}
+      <div className="bg-slate-50 px-4 py-3 sm:px-5 sm:py-3.5 border-t border-slate-200 flex items-center justify-between gap-3 text-xs text-slate-700">
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg shrink-0">👉</span>
+          <span className="leading-snug">
+            <strong className="text-slate-900 font-bold">Cómo pasar las páginas:</strong> Toca las flechas <strong>‹</strong> y <strong>›</strong> en la barra inferior de la imagen (o toca el borde derecho de la foto para avanzar).
           </span>
         </div>
       </div>
     </div>
   );
 };
-
