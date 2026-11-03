@@ -18,8 +18,8 @@ const categories: CategoryItem[] = [
     title: 'Colección Navidad 🎄',
     subtitle: 'Catálogos con más de 100 fotos y estampados navideños',
     badge: 'Temporada Festiva',
-    image: '/images/conjunto-ninos-mickey.webp',
-    alt: 'Colección de ropa navideña y pijamas confeccionadas en Venezuela',
+    image: '/images/navidad-familia-franelas.jpg',
+    alt: 'Colección de franelas navideñas familiares confeccionadas en Venezuela',
     link: '/#cat-navidad',
   },
   {
