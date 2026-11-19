@@ -18,7 +18,7 @@ const categories: CategoryItem[] = [
     title: 'Colección Navidad 🎄',
     subtitle: 'Catálogos con más de 100 fotos y estampados navideños',
     badge: 'Temporada Festiva',
-    image: '/images/navidad-familia-franelas.jpg',
+    image: '/images/navidad-familia-franelas.webp',
     alt: 'Colección de franelas navideñas familiares confeccionadas en Venezuela',
     link: '/#cat-navidad',
   },
