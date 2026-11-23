@@ -8,6 +8,7 @@ import {
   calculateCartSummary,
   saveOrder,
   createOrderInSupabase,
+  sanitizeInputText,
   clearCart,
   formatBs,
 } from '../lib/store';
@@ -82,38 +83,46 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     e.preventDefault();
     setErrorMessage('');
 
-    if (!customerName.trim()) {
-      setErrorMessage('Por favor ingresa tu Nombre y Apellido');
+    const cleanName = sanitizeInputText(customerName, 80);
+    if (!cleanName || cleanName.length < 3) {
+      setErrorMessage('Por favor ingresa tu Nombre y Apellido completo');
       return;
     }
-    if (!customerPhone.trim() || customerPhone.length < 10) {
-      setErrorMessage('Por favor ingresa un número de teléfono o WhatsApp válido');
+
+    const cleanPhone = sanitizeInputText(customerPhone, 25);
+    const digitsOnly = cleanPhone.replace(/\D/g, '');
+    if (digitsOnly.length < 10 || digitsOnly.length > 15 || !/^[\d\s\+\-\(\)]{10,25}$/.test(cleanPhone)) {
+      setErrorMessage('Por favor ingresa un número de teléfono o WhatsApp válido (mínimo 10 dígitos)');
       return;
     }
+
     if (!selectedZone) {
       setErrorMessage('Por favor selecciona una opción de entrega');
       return;
     }
-    if (!isPickupPoint && !deliveryAddressDetail.trim()) {
+
+    const cleanAddress = sanitizeInputText(deliveryAddressDetail, 250);
+    if (!isPickupPoint && (!cleanAddress || cleanAddress.length < 4)) {
       setErrorMessage('Por favor indica tu dirección de entrega o agencia de destino');
       return;
     }
 
     setIsSubmitting(true);
 
-    const orderNumber = `#EZ-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Número de orden resistente a colisiones con timestamp
+    const orderNumber = `#EZ-${Date.now().toString().slice(-4)}${Math.floor(100 + Math.random() * 900)}`;
 
     const newOrder: Order = {
       id: `order-${Date.now()}`,
       orderCode: orderNumber,
-      customerName,
-      customerPhone,
+      customerName: cleanName,
+      customerPhone: cleanPhone,
       deliveryZoneId: selectedZone.id,
       deliveryZoneName: selectedZone.name,
       scheduleDetails: selectedZone.scheduleDetails,
       deliveryCostUSD: summary.deliveryCostUSD,
       deliveryIsFree: summary.deliveryIsFree,
-      deliveryAddressDetail: isPickupPoint ? selectedZone.name : deliveryAddressDetail,
+      deliveryAddressDetail: isPickupPoint ? selectedZone.name : cleanAddress,
       paymentMethod,
       rateSnapshot: currentRate,
       subtotalUSD: summary.subtotalUSD,
@@ -143,12 +152,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       orderNumber,
       customer: {
         idNumber: 'V-00000000',
-        firstName: customerName.split(' ')[0] || customerName,
-        lastName: customerName.split(' ').slice(1).join(' ') || 'Cliente',
-        phone: customerPhone,
+        firstName: cleanName.split(' ')[0] || cleanName,
+        lastName: cleanName.split(' ').slice(1).join(' ') || 'Cliente',
+        phone: cleanPhone,
       },
       deliveryZone: selectedZone,
-      meetingPoint: isPickupPoint ? selectedZone.name : deliveryAddressDetail,
+      meetingPoint: isPickupPoint ? selectedZone.name : cleanAddress,
       paymentMethod,
       exchangeRate: currentRate,
       totalUnits: summary.totalUnits,
@@ -280,6 +289,7 @@ ${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetai
                 <input
                   type="text"
                   required
+                  maxLength={80}
                   placeholder="Ej. María Pérez"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
@@ -294,6 +304,7 @@ ${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetai
                 <input
                   type="tel"
                   required
+                  maxLength={25}
                   placeholder="Ej. 0412-1234567"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
@@ -386,6 +397,7 @@ ${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetai
                 <textarea
                   rows={2}
                   required
+                  maxLength={250}
                   placeholder={
                     isNational
                       ? 'Ej. C.I. 20.123.456, Agencia MRW San Antonio de los Altos'

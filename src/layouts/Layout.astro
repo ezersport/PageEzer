@@ -134,9 +134,9 @@ const fontsURL = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;
     <link href={fontsURL} rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link href={fontsURL} rel="stylesheet" /></noscript>
 
-    <!-- Datos estructurados (rich snippets de Google) -->
+    <!-- Datos estructurados (rich snippets de Google) - Escapado seguro contra XSS -->
     {allSchemas.map((schema) => (
-      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+      <script type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, '\\u003c')} />
     ))}
   </head>
   <body class="bg-[#f8fafc] text-slate-800 min-h-screen flex flex-col selection:bg-[#009fe3] selection:text-white antialiased">

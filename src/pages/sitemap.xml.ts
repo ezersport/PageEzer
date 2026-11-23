@@ -6,24 +6,46 @@ export const prerender = false;
 
 const SITE = 'https://ezersport.com';
 
+const escapeXml = (unsafe: string) =>
+  unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '&':
+        return '&amp;';
+      case "'":
+        return '&apos;';
+      case '"':
+        return '&quot;';
+      default:
+        return c;
+    }
+  });
+
 export const GET: APIRoute = async () => {
   const productSlugs = new Set<string>();
 
-  // 1. Slugs iniciales de mockData
+  // 1. Slugs iniciales de mockData (solo válidos y seguros)
   INITIAL_PRODUCTS.forEach((p) => {
-    if (p.slug) productSlugs.add(p.slug);
+    if (p.slug && /^[a-zA-Z0-9_-]+$/.test(p.slug) && p.isActive !== false) {
+      productSlugs.add(p.slug);
+    }
   });
 
-  // 2. Slugs frescos de Supabase
+  // 2. Slugs frescos de Supabase (buscando por la columna oficial 'activo')
   try {
     const { data } = await supabase
       .from('products')
-      .select('slug, is_active')
-      .eq('is_active', true);
+      .select('slug, activo')
+      .eq('activo', true);
 
     if (data && Array.isArray(data)) {
       data.forEach((p) => {
-        if (p.slug) productSlugs.add(p.slug);
+        if (p.slug && typeof p.slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(p.slug)) {
+          productSlugs.add(p.slug.trim());
+        }
       });
     }
   } catch (err) {
@@ -78,7 +100,7 @@ export const GET: APIRoute = async () => {
   ${Array.from(productSlugs)
     .map(
       (slug) => `  <url>
-    <loc>${SITE}/producto/${slug}</loc>
+    <loc>${SITE}/producto/${escapeXml(slug)}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>

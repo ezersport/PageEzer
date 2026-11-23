@@ -112,13 +112,14 @@ export const CanvaViewer: React.FC<CanvaViewerProps> = ({ url, title, className 
           </div>
         )}
 
-        {/* Visor Iframe de Canva Oficial */}
+        {/* Visor Iframe de Canva Oficial con sandbox de seguridad */}
         <iframe
           loading="lazy"
           title={title || 'Catálogo de Diseños Canva'}
           src={embedUrl}
           onLoad={() => setLoading(false)}
           allow="fullscreen; clipboard-write; encrypted-media"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
           allowFullScreen
           className="absolute inset-0 w-full h-full border-0"
         />

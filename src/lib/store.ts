@@ -31,7 +31,16 @@ export function emitEvent(eventName: string, detail?: any) {
   }
 }
 
-// Normalizador universal de enlaces de Canva a visor interactivo embed
+// Sanitizador defensivo para entradas de texto de usuarios y formularios
+export function sanitizeInputText(input: unknown, maxLength = 250): string {
+  if (typeof input !== 'string') return '';
+  return input
+    .replace(/[\x00-\x1F\x7F<>]/g, '') // Eliminar caracteres de control y etiquetas HTML
+    .trim()
+    .slice(0, maxLength);
+}
+
+// Normalizador seguro de enlaces de Canva a visor interactivo embed
 export function extractCanvaEmbedUrl(input?: string | null): string | undefined {
   if (!input || typeof input !== 'string') return undefined;
   const trimmed = input.trim();
@@ -39,21 +48,31 @@ export function extractCanvaEmbedUrl(input?: string | null): string | undefined 
 
   // Si pegó un <iframe> o código HTML de Canva
   const srcMatch = trimmed.match(/src=["'](https:\/\/[^"']+\.canva\.com\/[^"']+)["']/i);
-  let url = srcMatch ? srcMatch[1] : trimmed;
+  const candidate = srcMatch ? srcMatch[1] : trimmed;
 
-  if (url.includes('canva.com/design/')) {
-    if (url.includes('/view?embed')) {
-      return url;
+  try {
+    const parsed = new URL(candidate);
+    // Solo permitir HTTPS y dominios estrictos de Canva
+    if (parsed.protocol !== 'https:' || (parsed.hostname !== 'canva.com' && !parsed.hostname.endsWith('.canva.com'))) {
+      return undefined;
     }
-    const base = url.split('?')[0];
+    // Verificar que apunte a un recurso de diseño
+    if (!parsed.pathname.includes('/design/')) {
+      return undefined;
+    }
+
+    if (candidate.includes('/view?embed')) {
+      return candidate;
+    }
+    const base = candidate.split('?')[0];
     if (base.endsWith('/view') || base.endsWith('/watch') || base.endsWith('/edit')) {
       const cleanBase = base.substring(0, base.lastIndexOf('/'));
       return `${cleanBase}/view?embed`;
     }
     return `${base}/view?embed`;
+  } catch {
+    return undefined;
   }
-
-  return url.startsWith('http') ? url : undefined;
 }
 
 // Normalizador universal y defensivo de productos (Soporta productos sin variantes creados en ezer-admin)
@@ -344,32 +363,44 @@ export async function fetchCurrentRateFromSupabase(): Promise<number> {
   return cfg.tasa_bcv || getCurrentRate();
 }
 
-// 5. Crear Pedido en Supabase
+// 5. Crear Pedido en Supabase de forma segura y validada
 export async function createOrderInSupabase(orderData: any): Promise<{ success: boolean; orderId?: string; error?: string }> {
   try {
+    // Generar número de orden con entropía de tiempo y sufijo aleatorio para evitar colisiones
+    const safeOrderNumber = orderData.orderNumber && /^#EZ-[A-Z0-9]{4,15}$/.test(orderData.orderNumber)
+      ? orderData.orderNumber
+      : `#EZ-${Date.now().toString().slice(-4)}${Math.floor(100 + Math.random() * 900)}`;
+
+    const totalUSD = Math.max(0, Math.min(100000, Number(orderData.totalUSD) || 0));
+    const subtotalUSD = Math.max(0, Math.min(100000, Number(orderData.subtotalUSD) || 0));
+    const deliveryCostUSD = Math.max(0, Math.min(1000, Number(orderData.deliveryCostUSD) || 0));
+    const totalBs = Math.max(0, Number(orderData.totalBs) || 0);
+    const totalUnits = Math.max(1, Math.min(5000, Number(orderData.totalUnits) || 1));
+    const exchangeRate = Math.max(1, Number(orderData.exchangeRate) || 76.50);
+
     const { data: orderResult, error: orderError } = await supabase
       .from('orders')
       .insert({
-        numero_orden: orderData.orderNumber || `#EZ-${Math.floor(1000 + Math.random() * 9000)}`,
-        cedula_cliente: orderData.customer?.idNumber || 'V-00000000',
-        nombre_cliente: orderData.customer?.firstName || 'Cliente',
-        apellido_cliente: orderData.customer?.lastName || 'Ezer',
-        telefono_cliente: orderData.customer?.phone || '',
-        tipo_destino: orderData.destinationType || 'caracas_sabado',
-        zona_entrega_id: orderData.deliveryZone?.id || null,
-        zona_nombre: orderData.deliveryZone?.name || 'Caracas Plaza Venezuela',
-        punto_encuentro: orderData.meetingPoint || orderData.agencyCode || null,
-        metodo_pago_codigo: orderData.paymentMethod || 'pago_movil',
-        tasa_cambio_snapshot: orderData.exchangeRate || 76.50,
-        total_unidades: orderData.totalUnits || 1,
-        subtotal_usd: orderData.subtotalUSD || 0,
-        costo_delivery_usd: orderData.deliveryCostUSD || 0,
-        total_usd: orderData.totalUSD || 0,
-        total_bs: orderData.totalBs || 0,
-        costo_total_produccion_usd: (orderData.totalUSD || 0) * 0.5,
-        ganancia_neta_usd: (orderData.totalUSD || 0) * 0.5,
-        tipo_pago: orderData.paymentType || 'completo_100',
-        monto_pagado_usd: orderData.totalUSD || 0,
+        numero_orden: safeOrderNumber,
+        cedula_cliente: sanitizeInputText(orderData.customer?.idNumber || 'V-00000000', 30),
+        nombre_cliente: sanitizeInputText(orderData.customer?.firstName || 'Cliente', 60),
+        apellido_cliente: sanitizeInputText(orderData.customer?.lastName || 'Ezer', 60),
+        telefono_cliente: sanitizeInputText(orderData.customer?.phone || '', 30),
+        tipo_destino: sanitizeInputText(orderData.destinationType || 'caracas_sabado', 50),
+        zona_entrega_id: sanitizeInputText(orderData.deliveryZone?.id || '', 50) || null,
+        zona_nombre: sanitizeInputText(orderData.deliveryZone?.name || 'Caracas Plaza Venezuela', 100),
+        punto_encuentro: sanitizeInputText(orderData.meetingPoint || orderData.agencyCode || '', 150) || null,
+        metodo_pago_codigo: sanitizeInputText(orderData.paymentMethod || 'pago_movil', 40),
+        tasa_cambio_snapshot: exchangeRate,
+        total_unidades: totalUnits,
+        subtotal_usd: subtotalUSD,
+        costo_delivery_usd: deliveryCostUSD,
+        total_usd: totalUSD,
+        total_bs: totalBs,
+        costo_total_produccion_usd: Number((totalUSD * 0.5).toFixed(2)),
+        ganancia_neta_usd: Number((totalUSD * 0.5).toFixed(2)),
+        tipo_pago: orderData.paymentType === 'abono_50' ? 'abono_50' : 'completo_100',
+        monto_pagado_usd: totalUSD,
         estado: 'por_confirmar',
       })
       .select()
@@ -380,22 +411,36 @@ export async function createOrderInSupabase(orderData: any): Promise<{ success: 
       return { success: false, error: orderError.message };
     }
 
-    // Insertar items de la orden
-    if (orderResult && orderData.items && orderData.items.length > 0) {
-      const orderItems = orderData.items.map((item: any) => ({
-        order_id: orderResult.id,
-        producto_id: item.productId,
-        nombre_producto: item.productName,
-        talla: item.size || 'Única',
-        tipo_variante: item.variantType === 'print' ? 'estampado' : 'unicolor',
-        nombre_variante: item.optionName || 'Estándar',
-        cantidad: item.quantity,
-        precio_unitario_aplicado_usd: item.appliedUnitPriceUSD,
-        costo_unitario_usd: item.appliedUnitPriceUSD * 0.5,
-        subtotal_venta_usd: item.appliedUnitPriceUSD * item.quantity,
-      }));
+    // Insertar items de la orden con todos los campos NOT NULL requeridos por la base de datos
+    if (orderResult && orderData.items && Array.isArray(orderData.items) && orderData.items.length > 0) {
+      const orderItems = orderData.items.map((item: any) => {
+        const qty = Math.max(1, Math.min(1000, Number(item.quantity) || 1));
+        const unitPrice = Math.max(0, Number(item.appliedUnitPriceUSD ?? item.unitPriceUSD) || 0);
+        const unitCost = Number((unitPrice * 0.5).toFixed(2));
+        const subtotalVenta = Number((unitPrice * qty).toFixed(2));
+        const subtotalCosto = Number((unitCost * qty).toFixed(2));
+        const gananciaItem = Number((subtotalVenta - subtotalCosto).toFixed(2));
 
-      await supabase.from('order_items').insert(orderItems);
+        return {
+          order_id: orderResult.id,
+          producto_id: sanitizeInputText(item.productId, 100),
+          nombre_producto: sanitizeInputText(item.productName, 150),
+          talla: sanitizeInputText(item.size, 50) || 'Única',
+          tipo_variante: item.variantType === 'print' ? 'estampado' : 'unicolor',
+          nombre_variante: sanitizeInputText(item.optionName, 100) || 'Estándar',
+          cantidad: qty,
+          precio_unitario_aplicado_usd: unitPrice,
+          costo_unitario_usd: unitCost,
+          subtotal_venta_usd: subtotalVenta,
+          subtotal_costo_usd: subtotalCosto,
+          ganancia_item_usd: gananciaItem,
+        };
+      });
+
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+      if (itemsError) {
+        console.warn('Error al insertar items de orden en Supabase:', itemsError);
+      }
     }
 
     return { success: true, orderId: orderResult.id };
