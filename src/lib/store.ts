@@ -281,6 +281,7 @@ export async function fetchDeliveryZonesFromSupabase(): Promise<DeliveryZone[]> 
         instructions: Array.isArray(z.agencias_disponibles) && z.agencias_disponibles.length > 0
           ? `Agencias: ${z.agencias_disponibles.join(', ')}`
           : 'Entrega coordinada con el taller',
+        agencies: Array.isArray(z.agencias_disponibles) ? z.agencias_disponibles : [],
         isActive: Boolean(z.activa_esta_semana),
         sortOrder: 1,
       }));
@@ -390,6 +391,11 @@ export async function createOrderInSupabase(orderData: any): Promise<{ success: 
         zona_entrega_id: sanitizeInputText(orderData.deliveryZone?.id || '', 50) || null,
         zona_nombre: sanitizeInputText(orderData.deliveryZone?.name || 'Caracas Plaza Venezuela', 100),
         punto_encuentro: sanitizeInputText(orderData.meetingPoint || orderData.agencyCode || '', 150) || null,
+        empresa_envio: sanitizeInputText(orderData.shippingCompany || '', 50) || null,
+        codigo_agencia: sanitizeInputText(orderData.agencyCode || '', 100) || null,
+        estado_destino: sanitizeInputText(orderData.destinationState || '', 60) || null,
+        ciudad_destino: sanitizeInputText(orderData.destinationCity || '', 60) || null,
+        direccion_detalle: sanitizeInputText(orderData.addressDetail || '', 250) || null,
         metodo_pago_codigo: sanitizeInputText(orderData.paymentMethod || 'pago_movil', 40),
         tasa_cambio_snapshot: exchangeRate,
         total_unidades: totalUnits,

@@ -40,9 +40,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
 
   // Form states
   const [customerName, setCustomerName] = useState('');
+  const [customerCedula, setCustomerCedula] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [selectedAgency, setSelectedAgency] = useState('');
+  const [destinationCity, setDestinationCity] = useState('');
   const [deliveryAddressDetail, setDeliveryAddressDetail] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'pago_movil' | 'efectivo' | 'binance' | 'zinli'>('pago_movil');
+  const [paymentMethod, setPaymentMethod] = useState<'pago_movil' | 'transferencia' | 'efectivo' | 'binance' | 'zinli'>('pago_movil');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -78,6 +81,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   // Determinar si la zona seleccionada requiere ingresar dirección (solo si es domicilio o nacional)
   const isPickupPoint = selectedZone?.zoneType === 'encuentro';
   const isNational = selectedZone?.zoneType === 'nacional';
+  const availableAgencies =
+    selectedZone?.agencies && selectedZone.agencies.length > 0
+      ? selectedZone.agencies
+      : ['MRW', 'Zoom', 'Tealca', 'Domesa'];
+
+  // Asegurar que cuando se selecciona envío nacional haya una agencia pre-cargada o válida
+  useEffect(() => {
+    if (isNational && (!selectedAgency || !availableAgencies.includes(selectedAgency))) {
+      setSelectedAgency(availableAgencies[0] || 'MRW');
+    }
+  }, [isNational, selectedZoneId]);
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +102,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       setErrorMessage('Por favor ingresa tu Nombre y Apellido completo');
       return;
     }
+
+    const rawCedula = sanitizeInputText(customerCedula, 25).toUpperCase();
+    const cedulaDigits = rawCedula.replace(/\D/g, '');
+    if (cedulaDigits.length < 6 || cedulaDigits.length > 10) {
+      setErrorMessage('Por favor ingresa un número de Cédula válido (ej. V-20123456)');
+      return;
+    }
+    const cleanCedula = /^[VEJG]-?/i.test(rawCedula) ? rawCedula : `V-${cedulaDigits}`;
 
     const cleanPhone = sanitizeInputText(customerPhone, 25);
     const digitsOnly = cleanPhone.replace(/\D/g, '');
@@ -101,9 +123,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       return;
     }
 
+    const cleanCity = sanitizeInputText(destinationCity, 60);
     const cleanAddress = sanitizeInputText(deliveryAddressDetail, 250);
-    if (!isPickupPoint && (!cleanAddress || cleanAddress.length < 4)) {
-      setErrorMessage('Por favor indica tu dirección de entrega o agencia de destino');
+    if (isNational) {
+      if (!selectedAgency) {
+        setErrorMessage('Por favor selecciona la agencia de encomienda (MRW, Zoom, etc.)');
+        return;
+      }
+      if (!cleanCity || cleanCity.length < 3) {
+        setErrorMessage('Por favor indica el Estado y Ciudad de destino (ej. Carabobo - Valencia)');
+        return;
+      }
+      if (!cleanAddress || cleanAddress.length < 4) {
+        setErrorMessage('Por favor indica el nombre, código o dirección exacta de la agencia');
+        return;
+      }
+    } else if (!isPickupPoint && (!cleanAddress || cleanAddress.length < 4)) {
+      setErrorMessage('Por favor indica tu dirección exacta para la entrega');
       return;
     }
 
@@ -151,13 +187,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     createOrderInSupabase({
       orderNumber,
       customer: {
-        idNumber: 'V-00000000',
+        idNumber: cleanCedula,
         firstName: cleanName.split(' ')[0] || cleanName,
         lastName: cleanName.split(' ').slice(1).join(' ') || 'Cliente',
         phone: cleanPhone,
       },
+      destinationType: isNational ? 'nacional' : 'caracas_sabado',
       deliveryZone: selectedZone,
-      meetingPoint: isPickupPoint ? selectedZone.name : cleanAddress,
+      shippingCompany: isNational ? selectedAgency : '',
+      agencyCode: isNational ? cleanAddress : '',
+      destinationCity: isNational ? cleanCity : '',
+      addressDetail: cleanAddress,
+      meetingPoint: isPickupPoint
+        ? selectedZone.name
+        : isNational
+        ? `${selectedAgency} (${cleanCity}) - ${cleanAddress}`
+        : cleanAddress,
       paymentMethod,
       exchangeRate: currentRate,
       totalUnits: summary.totalUnits,
@@ -224,10 +269,11 @@ ${summary.hasMadeToOrderItems ? `\n⏱️ *Nota:* Incluye prendas bajo confecci�
 - Costo Envio: ${deliveryCostText}
 *TOTAL A PAGAR: ${formatBs(summary.totalBs)}*
 
-- Cliente: ${customerName}
-- Telefono: ${customerPhone}
+- Cliente: ${cleanName}
+- Cedula: ${cleanCedula}
+- Telefono: ${cleanPhone}
 - Metodo de Pago: ${paymentLabel}
-${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetail}\n` : ''}
+${isNational ? `- Agencia Encomienda: ${selectedAgency}\n- Ciudad/Estado: ${cleanCity}\n- Agencia / Direccion: ${cleanAddress}\n` : !isPickupPoint && cleanAddress ? `- Direccion: ${cleanAddress}\n` : ''}
 ¿Me confirman los datos bancarios para realizar el pago? ¡Muchas gracias!`;
 
     setTimeout(() => {
@@ -282,7 +328,7 @@ ${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetai
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                   Nombre y Apellido *
                 </label>
@@ -293,6 +339,21 @@ ${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetai
                   placeholder="Ej. María Pérez"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm sm:text-base text-slate-900 focus:outline-none focus:border-[#009fe3]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                  Cédula de Identidad *
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={20}
+                  placeholder="Ej. V-20123456"
+                  value={customerCedula}
+                  onChange={(e) => setCustomerCedula(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm sm:text-base text-slate-900 focus:outline-none focus:border-[#009fe3]"
                 />
               </div>
@@ -386,23 +447,71 @@ ${!isPickupPoint && deliveryAddressDetail ? `- Direccion: ${deliveryAddressDetai
               </div>
             )}
 
-            {/* Address input ONLY if NOT a fixed pickup point */}
-            {!isPickupPoint && (
+            {/* Campos dinámicos si es Envío Nacional o Domicilio */}
+            {isNational ? (
+              <div className="space-y-3.5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-slate-800 mb-2">
+                    Selecciona la Agencia de Encomienda *
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {availableAgencies.map((ag) => (
+                      <button
+                        key={ag}
+                        type="button"
+                        onClick={() => setSelectedAgency(ag)}
+                        className={`py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                          selectedAgency === ag
+                            ? 'bg-[#0c3b74] border-[#0c3b74] text-white shadow-sm'
+                            : 'bg-white border-slate-300 text-slate-700 hover:border-[#009fe3]'
+                        }`}
+                      >
+                        {ag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                    Estado y Ciudad de Destino *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={60}
+                    placeholder="Ej. Carabobo - Valencia"
+                    value={destinationCity}
+                    onChange={(e) => setDestinationCity(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#009fe3]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                    Nombre, Código o Dirección de la Agencia {selectedAgency || ''} *
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    maxLength={250}
+                    placeholder={`Ej. Agencia ${selectedAgency || 'MRW'} C.C. Metrópolis / Av. Bolívar`}
+                    value={deliveryAddressDetail}
+                    onChange={(e) => setDeliveryAddressDetail(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:border-[#009fe3]"
+                  />
+                </div>
+              </div>
+            ) : !isPickupPoint && (
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
-                  {isNational
-                    ? 'Indica Cédula y Agencia de Encomienda (ej. MRW Chacao / Zoom)'
-                    : 'Dirección exacta para la entrega a domicilio *'}
+                  Dirección exacta para la entrega a domicilio *
                 </label>
                 <textarea
                   rows={2}
                   required
                   maxLength={250}
-                  placeholder={
-                    isNational
-                      ? 'Ej. C.I. 20.123.456, Agencia MRW San Antonio de los Altos'
-                      : 'Ej. Calle principal, edificio Ávila piso 3 apto 3B'
-                  }
+                  placeholder="Ej. Calle principal, edificio Ávila piso 3 apto 3B"
                   value={deliveryAddressDetail}
                   onChange={(e) => setDeliveryAddressDetail(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:border-[#009fe3]"

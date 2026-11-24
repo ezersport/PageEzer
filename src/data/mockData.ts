@@ -56,6 +56,7 @@ export const INITIAL_DELIVERY_ZONES: DeliveryZone[] = [
     freeDeliveryMinUSD: 0.00,
     scheduleDetails: 'Lunes a Viernes',
     instructions: 'Envío cobro en destino a cualquier agencia del país. Te enviamos tu número de guía de inmediato.',
+    agencies: ['MRW', 'Zoom', 'Tealca', 'Domesa'],
     isActive: true,
     sortOrder: 5,
   },

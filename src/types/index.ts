@@ -73,6 +73,7 @@ export interface DeliveryZone {
   freeDeliveryMinUSD?: number;
   scheduleDetails: string;
   instructions: string;
+  agencies?: string[];
   isActive: boolean;
   sortOrder: number;
 }
