@@ -73,12 +73,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const selectedZone = zones.find((z) => z.id === selectedZoneId) || zones[0] || null;
-  const summary = calculateCartSummary(cartItems, currentRate, selectedZone);
-
-  // Determinar si la zona seleccionada requiere ingresar dirección (solo si es domicilio o nacional)
   const isPickupPoint = selectedZone?.zoneType === 'encuentro';
   const isNational = selectedZone?.zoneType === 'nacional';
   const availableAgencies =
@@ -91,7 +86,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     if (isNational && (!selectedAgency || !availableAgencies.includes(selectedAgency))) {
       setSelectedAgency(availableAgencies[0] || 'MRW');
     }
-  }, [isNational, selectedZoneId]);
+  }, [isNational, selectedZoneId, zones]);
+
+  if (!isOpen) return null;
+
+  const summary = calculateCartSummary(cartItems, currentRate, selectedZone);
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
