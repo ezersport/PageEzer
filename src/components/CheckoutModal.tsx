@@ -131,7 +131,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       hasMadeToOrderItems: summary.hasMadeToOrderItems,
       status: 'por_confirmar',
       createdAt: new Date().toISOString(),
-      items: cartItems.map((item) => ({
+      items: summary.items.map((item) => ({
         productId: item.productId,
         productName: item.productName,
         size: item.size,
@@ -165,7 +165,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       deliveryCostUSD: summary.deliveryCostUSD,
       totalUSD: summary.totalUSD,
       totalBs: summary.totalBs,
-      items: cartItems,
+      items: summary.items,
     });
 
     // Trigger celebratory confetti
@@ -178,7 +178,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     } catch (err) {}
 
     // Formatear mensaje oficial para WhatsApp Ezer Sport (Limpio, conciso, seguro y con detalle de entrega)
-    const itemsListText = cartItems
+    const itemsListText = summary.items
       .map((item) => {
         const isBajoPedido = item.availability === 'bajo_pedido' || item.isBajoPedido;
         const statusTag = isBajoPedido
